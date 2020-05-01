@@ -22,10 +22,19 @@ namespace Eshava.Transition.Models
 		/// </summary>
 		public IEnumerable<MappingPair> ValueMappings { get; set; }
 
+		/// <summary>
+		/// Optional
+		/// Fallback: InvariantCulture
+		/// </summary>
+		public string CultureCode { get; set; }
 		public bool IsSameDataRecord { get; set; }              /* Export */
 		public string ConditionalPropertyName { get; set; }     /* Export */
 		public string ConditionalPropertyValue { get; set; }    /* Export */
 		public bool SplitExportResult { get; set; }             /* Export */
+
+		#region json
+		public bool ExportAsString { get; set; }                /* Export */
+		#endregion
 
 		#region edi
 		public int PositionEDI { get; set; }

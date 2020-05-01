@@ -18,6 +18,7 @@ namespace Eshava.Test.Transition.Engines
 		private string _inputFile = @"..\..\..\Input\Addresses.json";
 		private string _inputFile2 = @"..\..\..\Input\Addresses2.json";
 		private string _inputFile3 = @"..\..\..\Input\Addresses3.json";
+		private string _inputFileCulture = @"..\..\..\Input\culturetest.json";
 
 		[TestInitialize]
 		public void Setup()
@@ -172,10 +173,14 @@ namespace Eshava.Test.Transition.Engines
 		[TestMethod]
 		public void JSONConvertWithoutRemoveDoubletsTest()
 		{
+			// Arrange
 			var data = File.ReadAllText(_inputFile, Encoding.UTF8);
 			var configuration = GetImportConfiguration(true);
+
+			// Act
 			var addresses = _classUnderTest.Convert<Address>(configuration.DataProperty, data, false).ToList();
 
+			// Assert
 			addresses.Should().HaveCount(4);
 			addresses[0].Communications.Should().HaveCount(2);
 			addresses[0].Contacts.Should().HaveCount(0);
@@ -250,10 +255,14 @@ namespace Eshava.Test.Transition.Engines
 		[TestMethod]
 		public void JSONConvertWithRemoveDoubletsTest()
 		{
+			// Arrange
 			var data = File.ReadAllText(_inputFile, Encoding.UTF8);
 			var configuration = GetImportConfiguration(true);
+
+			// Act
 			var addresses = _classUnderTest.Convert<Address>(configuration.DataProperty, data).ToList();
 
+			// Assert
 			addresses.Should().HaveCount(3);
 			addresses[0].Communications.Should().HaveCount(2);
 			addresses[0].Contacts.Should().HaveCount(2);
@@ -268,10 +277,14 @@ namespace Eshava.Test.Transition.Engines
 		[TestMethod]
 		public void JSONConvertWithRemoveDoubletsFromSource2Test()
 		{
+			// Arrange
 			var data = File.ReadAllText(_inputFile2, Encoding.UTF8);
 			var configuration = GetImportConfiguration(false);
+
+			// Act
 			var addresses = _classUnderTest.Convert<Address>(configuration.DataProperty, data).ToList();
 
+			// Assert
 			addresses.Should().HaveCount(3);
 			addresses[0].Communications.Should().HaveCount(2);
 			addresses[0].Contacts.Should().HaveCount(2);
@@ -286,10 +299,14 @@ namespace Eshava.Test.Transition.Engines
 		[TestMethod]
 		public void JSONConvertToCompanyWithoutRemoveDoubletsTest()
 		{
+			// Arrange
 			var data = File.ReadAllText(_inputFile, Encoding.UTF8);
 			var configuration = GetImportConfiguration(true, true);
+
+			// Act
 			var companies = _classUnderTest.Convert<Company>(configuration.DataProperty, data, false).ToList();
 
+			// Assert
 			companies.Should().HaveCount(4);
 			companies[0].Communications.Should().HaveCount(2);
 			companies[0].Contacts.Should().HaveCount(0);
@@ -364,10 +381,14 @@ namespace Eshava.Test.Transition.Engines
 		[TestMethod]
 		public void JSONConvertToCompanyWithoutRemoveDoubletsFromSource3Test()
 		{
+			// Arrange
 			var data = File.ReadAllText(_inputFile3, Encoding.UTF8);
 			var configuration = GetImportConfiguration(true, true, false);
+
+			// Act
 			var companies = _classUnderTest.Convert<Company>(configuration.DataProperty, data, false).ToList();
 
+			// Assert
 			companies.Should().HaveCount(4);
 			companies[0].Communications.Should().HaveCount(2);
 			companies[0].Contacts.Should().HaveCount(0);
@@ -443,10 +464,14 @@ namespace Eshava.Test.Transition.Engines
 		[TestMethod]
 		public void JSONExportConvertTest()
 		{
+			// Arrange
 			var data = _classUnderTest.Convert<Address>(GetImportConfiguration().DataProperty, File.ReadAllText(_inputFile, Encoding.UTF8), true).ToList();
 			var configuration = GetImportConfiguration();
+
+			// Act
 			var jsonData = _classUnderTest.Convert(configuration.DataProperty, data).ToArray();
 
+			// Assert
 			jsonData.Length.Should().Be(1);
 
 			var expectedResult = new StringBuilder();
@@ -559,10 +584,14 @@ namespace Eshava.Test.Transition.Engines
 		[TestMethod]
 		public void JSONExportConvertForCompanyTest()
 		{
+			// Arrange
 			var data = _classUnderTest.Convert<Company>(GetImportConfiguration(true, true, false).DataProperty, File.ReadAllText(_inputFile3, Encoding.UTF8), true).ToList();
 			var configuration = GetImportConfiguration(false, true, false);
+
+			// Act
 			var jsonData = _classUnderTest.Convert(configuration.DataProperty, data).ToArray();
 
+			// Assert
 			jsonData.Length.Should().Be(1);
 
 			var expectedResult = new StringBuilder();
@@ -667,10 +696,14 @@ namespace Eshava.Test.Transition.Engines
 		[TestMethod]
 		public void JSONExportConvertForCompanySplitExportTest()
 		{
+			// Arrange
 			var data = _classUnderTest.Convert<Company>(GetImportConfiguration(true, true, false).DataProperty, File.ReadAllText(_inputFile3, Encoding.UTF8), true).ToList();
 			var configuration = GetImportConfiguration(false, true, false, true);
+
+			// Act
 			var jsonData = _classUnderTest.Convert(configuration.DataProperty, data).ToArray();
 
+			// Assert
 			jsonData.Length.Should().Be(3);
 
 			var expectedResultOne = new StringBuilder();
@@ -775,6 +808,119 @@ namespace Eshava.Test.Transition.Engines
 			jsonData[0].Should().Be(expectedResultOne.ToString());
 			jsonData[1].Should().Be(expectedResultTwo.ToString());
 			jsonData[2].Should().Be(expectedResultThree.ToString());
+		}
+
+		[TestMethod]
+		public void ImportGermanCultureTest()
+		{
+			// Arrange
+			var data = File.ReadAllText(_inputFileCulture, Encoding.UTF8);
+			var configuration = new ConfigurationData
+			{
+				DataFormat = ContentFormat.Json,
+				DataProperty = new DataProperty
+				{
+					CultureCode = "de-DE",
+					SplitExportResult = false,
+					PropertySource = null,
+					DataProperties = new List<DataProperty>
+					{
+						new DataProperty {
+							PropertyTarget = "NumberOne",
+							PropertySource = "numberOne"
+						},
+						new DataProperty {
+							PropertyTarget = "NumberTwo",
+							PropertySource = "numberTwo"
+						},
+						new DataProperty {
+							PropertyTarget = "NumberThree",
+							PropertySource = "numberThree"
+						},
+						new DataProperty {
+							PropertyTarget = "NumberFour",
+							PropertySource = "numberFour"
+						},
+						new DataProperty {
+							PropertyTarget = "NumberFive",
+							PropertySource = "numberFive"
+						}
+					}
+				}
+			};
+
+			// Act
+			var cultureTest = _classUnderTest.Convert<CultureTest>(configuration.DataProperty, data, false).ToList();
+
+			// Assert
+			cultureTest.Should().HaveCount(1);
+			cultureTest.Single().NumberOne.Should().Be(10.15m);
+			cultureTest.Single().NumberTwo.Should().Be(20.25);
+			cultureTest.Single().NumberThree.Should().Be(30.35f);
+			cultureTest.Single().NumberFour.Should().Be(40);
+			cultureTest.Single().NumberFive.Should().Be(50);
+		}
+
+		[TestMethod]
+		public void ExportGermanCultureTest()
+		{
+			// Arrange
+			var cultureTest = new CultureTest
+			{
+				NumberOne = 10.15m,
+				NumberTwo = 20.25,
+				NumberThree = 30.35f,
+				NumberFour = 40,
+				NumberFive = 50L
+			};
+
+			var configuration = new ConfigurationData
+			{
+				DataFormat = ContentFormat.Json,
+				DataProperty = new DataProperty
+				{
+					CultureCode = "de-DE",
+					SplitExportResult = true,
+					PropertySource = null,
+					DataProperties = new List<DataProperty>
+					{
+						new DataProperty {
+							PropertyTarget = "NumberOne",
+							PropertySource = "numberOne",
+							ExportAsString = true
+						},
+						new DataProperty {
+							PropertyTarget = "NumberTwo",
+							PropertySource = "numberTwo",
+							ExportAsString = true
+						},
+						new DataProperty {
+							PropertyTarget = "NumberThree",
+							PropertySource = "numberThree",
+							ExportAsString = true
+						},
+						new DataProperty {
+							PropertyTarget = "NumberFour",
+							PropertySource = "numberFour",
+							ExportAsString = true
+						},
+						new DataProperty {
+							PropertyTarget = "NumberFive",
+							PropertySource = "numberFive",
+							ExportAsString = true
+						}
+					}
+				}
+			};
+
+			// Act
+			var result = _classUnderTest.Convert(configuration.DataProperty, new List<CultureTest> { cultureTest }).ToList();
+
+			// Assert
+			var data = File.ReadAllText(_inputFileCulture, Encoding.UTF8).Replace(" ", "").Replace("\r", "").Replace("\n", "").Replace("\t", "");
+
+			result.Should().HaveCount(1);
+			result.Single().Replace(" ", "").Replace("\r", "").Replace("\n", "").Should().Be(data);
 		}
 	}
 }

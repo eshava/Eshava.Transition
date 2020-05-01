@@ -17,6 +17,7 @@ namespace Eshava.Test.Transition.Engines
 		private CSVConverterEngine _classUnderTest;
 		private string _inputFile = @"..\..\..\Input\Addresses.csv";
 		private string _inputFile2 = @"..\..\..\Input\Addresses2.csv";
+		private string _inputFileCulture = @"..\..\..\Input\culturetest.csv";
 
 		[TestInitialize]
 		public void Setup()
@@ -781,10 +782,14 @@ namespace Eshava.Test.Transition.Engines
 		[TestMethod]
 		public void CSVImportConvertWithoutRemoveDoubletsTest()
 		{
+			// Arrange
 			var data = File.ReadAllText(_inputFile, Encoding.UTF8);
 			var configuration = GetImportConfiguration();
+			
+			// Act
 			var addresses = _classUnderTest.Convert<Address>(configuration.DataProperty, data, false).ToList();
 
+			// Assert
 			addresses.Should().HaveCount(5);
 			addresses[0].Communications.Should().HaveCount(2);
 			addresses[0].Contacts.Should().HaveCount(0);
@@ -876,10 +881,14 @@ namespace Eshava.Test.Transition.Engines
 		[TestMethod]
 		public void CSVImportConvertWithRemoveDoubletsTest()
 		{
+			// Arrange
 			var data = File.ReadAllText(_inputFile, Encoding.UTF8);
 			var configuration = GetImportConfiguration();
+
+			// Act
 			var addresses = _classUnderTest.Convert<Address>(configuration.DataProperty, data).ToList();
 
+			// Assert
 			addresses.Should().HaveCount(3);
 			addresses[0].Communications.Should().HaveCount(2);
 			addresses[0].Contacts.Should().HaveCount(2);
@@ -894,10 +903,14 @@ namespace Eshava.Test.Transition.Engines
 		[TestMethod]
 		public void CSVImportConvertWithoutRemoveDoubletsWithoutColumnHeaderRowTest()
 		{
+			// Arrange
 			var data = File.ReadAllText(_inputFile2, Encoding.UTF8);
 			var configuration = GetImportConfiguration(false);
+
+			// Act
 			var addresses = _classUnderTest.Convert<Address>(configuration.DataProperty, data, false).ToList();
 
+			// Assert
 			addresses.Should().HaveCount(5);
 			addresses[0].Communications.Should().HaveCount(2);
 			addresses[0].Contacts.Should().HaveCount(0);
@@ -989,10 +1002,14 @@ namespace Eshava.Test.Transition.Engines
 		[TestMethod]
 		public void CSVImportConvertCompanyWithoutRemoveDoubletsTest()
 		{
+			// Arrange
 			var data = File.ReadAllText(_inputFile, Encoding.UTF8);
 			var configuration = GetImportConfigurationForCompany();
+
+			// Act
 			var addresses = _classUnderTest.Convert<Company>(configuration.DataProperty, data, false).ToList();
 
+			// Assert
 			addresses.Should().HaveCount(5);
 			addresses[0].Communications.Should().HaveCount(2);
 			addresses[0].Contacts.Should().HaveCount(0);
@@ -1084,11 +1101,14 @@ namespace Eshava.Test.Transition.Engines
 		[TestMethod]
 		public void CSVExportConvertTest()
 		{
+			// Arrange
 			var data = _classUnderTest.Convert<Address>(GetImportConfiguration().DataProperty, File.ReadAllText(_inputFile, Encoding.UTF8), true).ToList();
-
 			var configuration = GetExportConfiguration();
+
+			// Act
 			var csvData = _classUnderTest.Convert(configuration.DataProperty, data);
 
+			// Assert
 			var rows = csvData.First().Split('\n');
 			rows.Length.Should().Be(5);
 			rows[0].TrimEnd('\r').Should().Be("KundenNr;Unternehmen;Strasse;PLZ;Ort;Land;EmailZentrale;TelefonZentrale;Anrede;Vorname;Nachname;Position;Email;Telefon;Mobil");
@@ -1101,11 +1121,14 @@ namespace Eshava.Test.Transition.Engines
 		[TestMethod]
 		public void CSVExportConvertForCompanyTest()
 		{
+			// Arrange
 			var data = _classUnderTest.Convert<Company>(GetImportConfigurationForCompany().DataProperty, File.ReadAllText(_inputFile, Encoding.UTF8), true).ToList();
-
 			var configuration = GetExportConfigurationForCompany();
+
+			// Act
 			var csvData = _classUnderTest.Convert(configuration.DataProperty, data);
 
+			// Assert
 			var rows = csvData.First().Split('\n');
 			rows.Length.Should().Be(5);
 			rows[0].TrimEnd('\r').Should().Be("KundenNr;Unternehmen;Strasse;PLZ;Ort;Land;EmailZentrale;TelefonZentrale;Anrede;Vorname;Nachname;Position;Email;Telefon;Mobil");
@@ -1113,6 +1136,119 @@ namespace Eshava.Test.Transition.Engines
 			rows[2].TrimEnd('\r').Should().Be("Kdn0001;Alphabet;ABC Allee 123;12345;Digenskirchen;DE;info@alphabet.de;+4985 123450;Frau;Emmen;Taler;Kundenservice;e.taler@alphabet.de;+4985 1234589;");
 			rows[3].TrimEnd('\r').Should().Be("Kdn0003;TWC AG;Deep Link Avenue 1;45110;Pirna;DE;;;Frau;Lasmiranda;Dennsiewillja;Sonstiges;l.d@twc-ag.net;;");
 			rows[4].TrimEnd('\r').Should().Be("Kdn0002;Spielwaren GmbH;Fun Road 666;98765;Entenhausen;DE;contact@spielwaren-gmbh.de;;;;;;;;");
+		}
+
+		[TestMethod]
+		public void ImportGermanCultureTest()
+		{
+			// Arrange
+			var data = File.ReadAllText(_inputFileCulture, Encoding.UTF8);
+			var configuration = new ConfigurationData
+			{
+				DataFormat = ContentFormat.Csv,
+				DataProperty = new DataProperty
+				{
+					CultureCode = "de-DE",
+					SeparatorCSVColumn = ';',
+					HasColumnNamesCSV = false,
+					DataProperties = new List<DataProperty>
+					{
+						new DataProperty {
+							PropertyTarget = "NumberOne",
+							PropertySource = "0"
+						},
+						new DataProperty {
+							PropertyTarget = "NumberTwo",
+							PropertySource = "1"
+						},
+						new DataProperty {
+							PropertyTarget = "NumberThree",
+							PropertySource = "2"
+						},
+						new DataProperty {
+							PropertyTarget = "NumberFour",
+							PropertySource = "3"
+						},
+						new DataProperty {
+							PropertyTarget = "NumberFive",
+							PropertySource = "4"
+						}
+					}
+				}
+			};
+
+			// Act
+			var cultureTest = _classUnderTest.Convert<CultureTest>(configuration.DataProperty, data, false).ToList();
+
+			// Assert
+			cultureTest.Should().HaveCount(1);
+			cultureTest.Single().NumberOne.Should().Be(10.15m);
+			cultureTest.Single().NumberTwo.Should().Be(20.25);
+			cultureTest.Single().NumberThree.Should().Be(30.35f);
+			cultureTest.Single().NumberFour.Should().Be(40);
+			cultureTest.Single().NumberFive.Should().Be(50);
+		}
+
+		[TestMethod]
+		public void ExportGermanCultureTest()
+		{
+			// Arrange
+			var cultureTest = new CultureTest
+			{
+				NumberOne = 10.15m,
+				NumberTwo = 20.25,
+				NumberThree = 30.35f,
+				NumberFour = 40,
+				NumberFive = 50L
+			};
+
+			var configuration = new ConfigurationData
+			{
+				DataFormat = ContentFormat.Csv,
+				DataProperty = new DataProperty
+				{
+					CultureCode = "de-DE",
+					SeparatorCSVColumn = ';',
+					HasColumnNamesCSV = false,
+					DataProperties = new List<DataProperty>
+					{
+						new DataProperty {
+							PropertyTarget = "NumberOne",
+							PropertySource = "0",
+							PropertySourceIndexCSV = 0
+						},
+						new DataProperty {
+							PropertyTarget = "NumberTwo",
+							PropertySource = "1",
+							PropertySourceIndexCSV = 1
+						},
+						new DataProperty {
+							PropertyTarget = "NumberThree",
+							PropertySource = "2",
+							PropertySourceIndexCSV = 2
+						},
+						new DataProperty {
+							PropertyTarget = "NumberFour",
+							PropertySource = "3",
+							PropertySourceIndexCSV = 3
+						},
+						new DataProperty {
+							PropertyTarget = "NumberFive",
+							PropertySource = "4",
+							PropertySourceIndexCSV = 4
+						}
+					}
+				}
+			};
+
+			// Act
+			var result = _classUnderTest.Convert(configuration.DataProperty, new List<CultureTest> { cultureTest }).ToList();
+
+			// Assert
+			var data = File.ReadAllText(_inputFileCulture, Encoding.UTF8).Replace(" ", "").Replace("\r", "").Replace("\n", "").Replace("\t", "");
+
+			result.Should().HaveCount(1);
+			result.Single().Replace(" ", "").Replace("\r", "").Replace("\n", "").Should().Be(data);
 		}
 	}
 }

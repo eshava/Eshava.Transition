@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<culturetest>
+	<numberone>10,15</numberone>
+	<numbertwo>20,25</numbertwo>
+	<numberthree>30,35</numberthree>
+	<numberfour>40</numberfour>
+	<numberfive>50</numberfive>
+</culturetest>

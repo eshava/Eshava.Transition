@@ -36,6 +36,7 @@ namespace Eshava.Test.Transition.Engines
 		private EDIConverterEngine _classUnderTest;
 		private string _inputFile = @"..\..\..\Input\Addresses.edi";
 		private string _inputFile2 = @"..\..\..\Input\Addresses2.edi";
+		private string _inputFileCulture = @"..\..\..\Input\culturetest.edi";
 
 		[TestInitialize]
 		public void Setup()
@@ -769,10 +770,14 @@ namespace Eshava.Test.Transition.Engines
 		[TestMethod]
 		public void EdiConvertWithoutRemoveDoubletsTest()
 		{
+			// Arrange
 			var data = File.ReadAllText(_inputFile, Encoding.UTF8);
 			var configuration = GetImportConfiguration();
+			
+			// Act
 			var addresses = _classUnderTest.Convert<Address>(configuration.DataProperty, data, false).ToList();
 
+			// Assert
 			addresses.Should().HaveCount(5);
 			addresses[0].Communications.Should().HaveCount(2);
 			addresses[0].Contacts.Should().HaveCount(0);
@@ -864,10 +869,14 @@ namespace Eshava.Test.Transition.Engines
 		[TestMethod]
 		public void EdiConvertWithRemoveDoubletsTest()
 		{
+			// Arrange
 			var data = File.ReadAllText(_inputFile, Encoding.UTF8);
 			var configuration = GetImportConfiguration();
+			
+			// Act
 			var addresses = _classUnderTest.Convert<Address>(configuration.DataProperty, data).ToList();
 
+			// Assert
 			addresses.Should().HaveCount(3);
 			addresses[0].Communications.Should().HaveCount(2);
 			addresses[0].Contacts.Should().HaveCount(2);
@@ -894,10 +903,14 @@ namespace Eshava.Test.Transition.Engines
 		[TestMethod]
 		public void EdiConvertCompanyWithoutRemoveDoubletsTest()
 		{
+			// Arrange
 			var data = File.ReadAllText(_inputFile, Encoding.UTF8);
 			var configuration = GetImportConfigurationForCompany();
+			
+			// Act
 			var addresses = _classUnderTest.Convert<Company>(configuration.DataProperty, data, false).ToList();
 
+			// Assert
 			addresses.Should().HaveCount(5);
 			addresses[0].Communications.Should().HaveCount(2);
 			addresses[0].Contacts.Should().HaveCount(0);
@@ -989,11 +1002,14 @@ namespace Eshava.Test.Transition.Engines
 		[TestMethod]
 		public void EdiExportConvertTest()
 		{
+			// Arrange
 			var data = _classUnderTest.Convert<Address>(GetImportConfiguration().DataProperty, File.ReadAllText(_inputFile, Encoding.UTF8), true).ToList();
-
 			var configuration = GetImportConfiguration();
+			
+			// Act
 			var ediData = _classUnderTest.Convert(configuration.DataProperty, data);
 
+			// Assert
 			var rows = ediData.First().Split('\n');
 			rows.Length.Should().Be(18);
 			rows[0].TrimEnd('\r').Should().Be("Kdn0001   Alphabet                                                                                            ABC Allee 123                                                                                       ");
@@ -1019,11 +1035,14 @@ namespace Eshava.Test.Transition.Engines
 		[TestMethod]
 		public void EdiExportConvertConfiguration2Test()
 		{
+			// Arrange
 			var data = _classUnderTest.Convert<Address>(GetImportConfiguration().DataProperty, File.ReadAllText(_inputFile, Encoding.UTF8), true).ToList();
-
 			var configuration = GetImportConfiguration2();
+
+			// Act
 			var ediData = _classUnderTest.Convert(configuration.DataProperty, data).ToArray();
 
+			// Assert
 			ediData.Length.Should().Be(3);
 
 			var rows = ediData[0].Split('\n');
@@ -1056,11 +1075,14 @@ namespace Eshava.Test.Transition.Engines
 		[TestMethod]
 		public void EdiExportConvertForCompanyTest()
 		{
+			// Arrange
 			var data = _classUnderTest.Convert<Company>(GetImportConfigurationForCompany().DataProperty, File.ReadAllText(_inputFile, Encoding.UTF8), true).ToList();
-
 			var configuration = GetImportConfigurationForCompany();
+
+			// Act
 			var ediData = _classUnderTest.Convert(configuration.DataProperty, data);
 
+			// Assert
 			var rows = ediData.First().Split('\n');
 			rows.Length.Should().Be(18);
 			rows[0].TrimEnd('\r').Should().Be("Kdn0001   Alphabet                                                                                            ABC Allee 123                                                                                       ");
@@ -1081,6 +1103,130 @@ namespace Eshava.Test.Transition.Engines
 			rows[15].TrimEnd('\r').Should().Be("Kdn0002   Spielwaren GmbH                                                                                     Fun Road 666                                                                                        ");
 			rows[16].TrimEnd('\r').Should().Be("98765     Entenhausen                                                                                         DE                                                                                                  ");
 			rows[17].TrimEnd('\r').Should().Be("contact@spielwaren-gmbh.de                                                                                                                                                                                        ");
+		}
+
+		[TestMethod]
+		public void ImportGermanCultureTest()
+		{
+			// Arrange
+			var data = File.ReadAllText(_inputFileCulture, Encoding.UTF8);
+			var configuration = new ConfigurationData
+			{
+				DataFormat = ContentFormat.Edi,
+				DataProperty = new DataProperty
+				{
+					CultureCode = "de-DE",
+					DataProperties = new List<DataProperty>
+					{
+						new DataProperty {
+							PropertyTarget = "NumberOne",
+							PositionEDI = 0,
+							LengthEDI = 10,
+							LineIndexEDI = 0
+						},
+						new DataProperty {
+							PropertyTarget = "NumberTwo",
+							PositionEDI = 10,
+							LengthEDI = 10,
+							LineIndexEDI = 0
+						},
+						new DataProperty {
+							PropertyTarget = "NumberThree",
+							PositionEDI = 20,
+							LengthEDI = 10,
+							LineIndexEDI = 0
+						},
+						new DataProperty {
+							PropertyTarget = "NumberFour",
+							PositionEDI = 30,
+							LengthEDI = 10,
+							LineIndexEDI = 0
+						},
+						new DataProperty {
+							PropertyTarget = "NumberFive",
+							PositionEDI = 40,
+							LengthEDI = 10,
+							LineIndexEDI = 0
+						}
+					}
+				}
+			};
+
+			// Act
+			var cultureTest = _classUnderTest.Convert<CultureTest>(configuration.DataProperty, data, false).ToList();
+
+			// Assert
+			cultureTest.Should().HaveCount(1);
+			cultureTest.Single().NumberOne.Should().Be(10.15m);
+			cultureTest.Single().NumberTwo.Should().Be(20.25);
+			cultureTest.Single().NumberThree.Should().Be(30.35f);
+			cultureTest.Single().NumberFour.Should().Be(40);
+			cultureTest.Single().NumberFive.Should().Be(50);
+		}
+
+		[TestMethod]
+		public void ExportGermanCultureTest()
+		{
+			// Arrange
+			var cultureTest = new CultureTest
+			{
+				NumberOne = 10.15m,
+				NumberTwo = 20.25,
+				NumberThree = 30.35f,
+				NumberFour = 40,
+				NumberFive = 50L
+			};
+
+			var configuration = new ConfigurationData
+			{
+				DataFormat = ContentFormat.Edi,
+				DataProperty = new DataProperty
+				{
+					CultureCode = "de-DE",
+					DataProperties = new List<DataProperty>
+					{
+						new DataProperty {
+							PropertyTarget = "NumberOne",
+							PositionEDI = 0,
+							LengthEDI = 10,
+							LineIndexEDI = 0
+						},
+						new DataProperty {
+							PropertyTarget = "NumberTwo",
+							PositionEDI = 10,
+							LengthEDI = 10,
+							LineIndexEDI = 0
+						},
+						new DataProperty {
+							PropertyTarget = "NumberThree",
+							PositionEDI = 20,
+							LengthEDI = 10,
+							LineIndexEDI = 0
+						},
+						new DataProperty {
+							PropertyTarget = "NumberFour",
+							PositionEDI = 30,
+							LengthEDI = 10,
+							LineIndexEDI = 0
+						},
+						new DataProperty {
+							PropertyTarget = "NumberFive",
+							PositionEDI = 40,
+							LengthEDI = 10,
+							LineIndexEDI = 0
+						}
+					}
+				}
+			};
+
+			// Act
+			var result = _classUnderTest.Convert(configuration.DataProperty, new List<CultureTest> { cultureTest }).ToList();
+
+			// Assert
+			var data = File.ReadAllText(_inputFileCulture, Encoding.UTF8);
+
+			result.Should().HaveCount(1);
+			result.Single().Should().Be(data);
 		}
 	}
 }

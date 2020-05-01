@@ -1,4 +1,6 @@
-﻿namespace Eshava.Transition.Models.EDI
+﻿using System.Globalization;
+
+namespace Eshava.Transition.Models.EDI
 {
 	public class EdiDataRecordSettings
 	{
@@ -6,5 +8,6 @@
 		public DataProperty DataProperty { get; set; }
 		public int MaxLineLength { get; set; }
 		public int MaxLineCount { get; set; }
+		public CultureInfo CultureInfo { get; set; }
 	}
 }

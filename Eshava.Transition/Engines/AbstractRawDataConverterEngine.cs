@@ -15,7 +15,7 @@ namespace Eshava.Transition.Engines
 
 			if (settings.DataProperty.HasMapping)
 			{
-				SetPropertyValue(settings.PropertyInfo, settings.DataRecord, settings.DataProperty.MappedValue);
+				SetPropertyValue(settings.PropertyInfo, settings.DataRecord, settings.DataProperty.MappedValue, settings.CultureInfo);
 			}
 			else if (CheckIfIEnumerable(settings.PropertyInfo))
 			{
@@ -63,7 +63,7 @@ namespace Eshava.Transition.Engines
 			var child = ProcessDataProperty(classSettings).FirstOrDefault();
 			if (child != null && !(child as IEmpty).IsEmpty)
 			{
-				SetPropertyValue(settings.PropertyInfo, settings.DataRecord, child);
+				SetPropertyValue(settings.PropertyInfo, settings.DataRecord, child, settings.CultureInfo);
 			}
 		}
 
@@ -86,7 +86,7 @@ namespace Eshava.Transition.Engines
 				}
 			}
 
-			SetPropertyValue(settings.PropertyInfo, settings.DataRecord, rawValue);
+			SetPropertyValue(settings.PropertyInfo, settings.DataRecord, rawValue, settings.CultureInfo);
 		}
 	}
 }

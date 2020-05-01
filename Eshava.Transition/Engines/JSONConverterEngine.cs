@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Eshava.Core.Extensions;
 using Eshava.Transition.Enums;
+using Eshava.Transition.Extensions;
 using Eshava.Transition.Interfaces;
 using Eshava.Transition.Models;
 using Eshava.Transition.Models.JSON;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Eshava.Transition.Engines
@@ -25,12 +28,19 @@ namespace Eshava.Transition.Engines
 
 			var jsonData = Newtonsoft.Json.JsonConvert.DeserializeObject(data);
 
-			List<T> dataRecords = null;
-
+			List<T> dataRecords;
 			if (jsonData is JObject)
 			{
 				var jsonObject = jsonData as JObject;
-				dataRecords = ProcessRow<T>(configuration, jsonObject.First);
+				if (jsonObject.First is JProperty && jsonObject.First.Children().FirstOrDefault() is JArray)
+				{
+					dataRecords = ProcessRow<T>(configuration, jsonObject.First);
+				}
+				else
+				{
+					// process single data object
+					dataRecords = ProcessRow<T>(configuration, jsonObject);
+				}
 			}
 			else if (jsonData is JArray)
 			{
@@ -56,6 +66,10 @@ namespace Eshava.Transition.Engines
 			{
 				jToken = dataObject as JArray;
 			}
+			else if (dataObject is JObject)
+			{
+				jToken = new JArray(dataObject);
+			}
 			else
 			{
 				return new List<T>();
@@ -66,7 +80,8 @@ namespace Eshava.Transition.Engines
 			{
 				DataProperty = configuration,
 				RawDataNode = jToken,
-				DataType = typeof(T)
+				DataType = typeof(T),
+				CultureInfo = configuration.CultureCode.GetCultureInfo()
 			};
 			var items = ProcessDataProperty(settings);
 
@@ -114,7 +129,8 @@ namespace Eshava.Transition.Engines
 			var nodeSettings = new JSONSettings
 			{
 				DataType = settings.DataType,
-				DataRecord = Activator.CreateInstance(settings.DataType)
+				DataRecord = Activator.CreateInstance(settings.DataType),
+				CultureInfo = settings.CultureInfo
 			};
 
 			ProcessJToken(settings.DataProperty.DataProperties, dataObject, nodeSettings);
@@ -151,7 +167,8 @@ namespace Eshava.Transition.Engines
 							DataProperty = dataPropertyChild,
 							RawDataNode = nodeSettings.RawDataNode.First().Children().FirstOrDefault(t => ((JProperty)t).Name.Equals(dataPropertyChild.PropertySource)),
 							DataType = nodeSettings.DataType,
-							DataRecord = nodeSettings.DataRecord
+							DataRecord = nodeSettings.DataRecord,
+							CultureInfo = nodeSettings.CultureInfo
 						};
 
 						ProcessPropertyInfo(childSettings);
@@ -178,7 +195,8 @@ namespace Eshava.Transition.Engines
 			{
 				DataProperty = settings.DataProperty,
 				RawDataNode = settings.RawDataNode.First,
-				DataType = settings.PropertyInfo.PropertyType.GetGenericArguments()[0]
+				DataType = settings.PropertyInfo.PropertyType.GetGenericArguments()[0],
+				CultureInfo = settings.CultureInfo
 			};
 
 			ProcessEnumerableProperty(childSettings, dataRecordEnumerable);
@@ -208,14 +226,16 @@ namespace Eshava.Transition.Engines
 				}
 			}
 
+			var cultureInfo = configuration.CultureCode.GetCultureInfo();
+
 			if (configuration.PropertySource.IsNullOrEmpty())
 			{
 				if (configuration.SplitExportResult)
 				{
-					return jArray.Select(item => item.ToString()).ToList();
+					return jArray.Select(item => SerializeObject(item, cultureInfo)).ToList();
 				}
 
-				return new List<string> { jArray.ToString() };
+				return new List<string> { SerializeObject(jArray, cultureInfo) };
 			}
 
 			var wrapperObject = new JObject
@@ -223,12 +243,20 @@ namespace Eshava.Transition.Engines
 				new JProperty(configuration.PropertySource, jArray)
 			};
 
-			return new List<string> { wrapperObject.ToString() };
+			return new List<string> { SerializeObject(wrapperObject, cultureInfo) };
 		}
 
-		private JObject ProcessDataRecord<T>(T dataRecord, DataProperty dataProperty)
+		private string SerializeObject(JToken jToken, CultureInfo cultureInfo)
 		{
-			return ProcessDataRecord(new JSONSettings { DataRecord = dataRecord, DataProperty = dataProperty });
+			return JsonConvert.SerializeObject(jToken, Formatting.Indented, new JsonSerializerSettings
+			{
+				Culture = cultureInfo
+			});
+		}
+
+		private JObject ProcessDataRecord<T>(T dataRecord, DataProperty configuration)
+		{
+			return ProcessDataRecord(new JSONSettings { DataRecord = dataRecord, DataProperty = configuration, CultureInfo = configuration.CultureCode.GetCultureInfo() });
 		}
 
 		private JObject ProcessDataRecord(JSONSettings parentSettings)
@@ -247,6 +275,7 @@ namespace Eshava.Transition.Engines
 					PropertyInfos = propertyInfos,
 					DataRecord = parentSettings.DataRecord,
 					RawDataNode = resultObject,
+					CultureInfo = parentSettings.CultureInfo
 				};
 
 				if (propertyInfo != null)
@@ -311,6 +340,10 @@ namespace Eshava.Transition.Engines
 			{
 				rawValueBoxed = CheckAndApplyMapping(rawValueBoxed.ToString(), settings.DataProperty);
 			}
+			else if (settings.DataProperty.ExportAsString)
+			{
+				rawValueBoxed = System.Convert.ToString(rawValueBoxed, settings.CultureInfo);
+			}
 
 			var resultObject = settings.RawDataNode as JObject;
 			var property = resultObject.Children().SingleOrDefault(c => c.Type == JTokenType.Property && ((JProperty)c).Name == settings.DataProperty.PropertySource) as JProperty;
@@ -326,7 +359,7 @@ namespace Eshava.Transition.Engines
 		{
 			var dataRecordClass = settings.PropertyInfo.GetValue(settings.DataRecord);
 
-			return ProcessDataRecord(new JSONSettings { DataRecord = dataRecordClass, DataProperty = settings.DataProperty });
+			return ProcessDataRecord(new JSONSettings { DataRecord = dataRecordClass, DataProperty = settings.DataProperty, CultureInfo = settings.CultureInfo });
 		}
 
 		private JArray ProcessEnumerableDataProperty(JSONSettings settings)
@@ -338,7 +371,7 @@ namespace Eshava.Transition.Engines
 			{
 				foreach (var subItem in dataRecordEnumerable)
 				{
-					var resultItem = ProcessDataRecord(new JSONSettings { DataRecord = subItem, DataProperty = settings.DataProperty });
+					var resultItem = ProcessDataRecord(new JSONSettings { DataRecord = subItem, DataProperty = settings.DataProperty, CultureInfo = settings.CultureInfo });
 					if (resultItem != null)
 					{
 						result.Add(resultItem);

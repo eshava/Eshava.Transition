@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using Eshava.Core.Extensions;
 using Eshava.Transition.Enums;
+using Eshava.Transition.Extensions;
 using Eshava.Transition.Interfaces;
 using Eshava.Transition.Interfaces.EDI;
 using Eshava.Transition.Models;
@@ -42,7 +44,7 @@ namespace Eshava.Transition.Engines
 				StartRowIndex = 0
 			};
 
-			var items = ProcessDataProperty(settings);
+			var items = ProcessDataProperty(settings, configuration.CultureCode.GetCultureInfo());
 
 			foreach (var item in items)
 			{
@@ -52,7 +54,7 @@ namespace Eshava.Transition.Engines
 			return dataRecords;
 		}
 
-		private IEnumerable<object> ProcessDataProperty(EdiDataPropertySettings dataPropertySettings)
+		private IEnumerable<object> ProcessDataProperty(EdiDataPropertySettings dataPropertySettings, CultureInfo cultureInfo)
 		{
 			var offsetRowIndex = 0;
 			var loopCount = 0;
@@ -78,7 +80,8 @@ namespace Eshava.Transition.Engines
 						DataRows = dataPropertySettings.DataRows,
 						DataRecord = dataRecord,
 						DataType = dataPropertySettings.DataRecordType,
-						CurrentStartRowIndex = currentStartRowIndex
+						CurrentStartRowIndex = currentStartRowIndex,
+						CultureInfo = cultureInfo
 					};
 
 					foreach (var dataProperty in dataPropertySettings.DataProperty.DataProperties)
@@ -108,7 +111,7 @@ namespace Eshava.Transition.Engines
 
 			if (settings.DataProperty.HasMapping)
 			{
-				SetPropertyValue(settings.PropertyInfo, settings.DataRecord, settings.DataProperty.MappedValue);
+				SetPropertyValue(settings.PropertyInfo, settings.DataRecord, settings.DataProperty.MappedValue, settings.CultureInfo);
 			}
 			else if (CheckIfIEnumerable(settings.PropertyInfo))
 			{
@@ -147,10 +150,10 @@ namespace Eshava.Transition.Engines
 				StartRowIndex = settings.CurrentStartRowIndex
 			};
 
-			var child = ProcessDataProperty(dataPropertySettings).FirstOrDefault();
+			var child = ProcessDataProperty(dataPropertySettings, settings.CultureInfo).FirstOrDefault();
 			if (child != null && !(child as IEmpty).IsEmpty)
 			{
-				SetPropertyValue(settings.PropertyInfo, settings.DataRecord, child);
+				SetPropertyValue(settings.PropertyInfo, settings.DataRecord, child, settings.CultureInfo);
 			}
 		}
 
@@ -178,7 +181,7 @@ namespace Eshava.Transition.Engines
 					}
 				}
 
-				SetPropertyValue(settings.PropertyInfo, settings.DataRecord, rawValue);
+				SetPropertyValue(settings.PropertyInfo, settings.DataRecord, rawValue, settings.CultureInfo);
 			}
 			else
 			{
@@ -200,7 +203,7 @@ namespace Eshava.Transition.Engines
 				StartRowIndex = settings.CurrentStartRowIndex
 			};
 
-			var childs = ProcessDataProperty(dataPropertySettings);
+			var childs = ProcessDataProperty(dataPropertySettings, settings.CultureInfo);
 			ProcessEnumerablePropertyResult(childs, dataRecordEnumerable);
 		}
 
@@ -248,23 +251,24 @@ namespace Eshava.Transition.Engines
 			}
 
 			var dataRows = new List<string>();
+			var cultureInfo = configuration.CultureCode.GetCultureInfo();
 
 			if (configuration.CanRepeatEDI)
 			{
-				dataRows.Add(ProcessDataRecords<T>(data, configuration));
+				dataRows.Add(ProcessDataRecords<T>(data, configuration, cultureInfo));
 			}
 			else
 			{
 				foreach (var dataItem in data)
 				{
-					dataRows.Add(ProcessDataRecord<T>(dataItem, configuration));
+					dataRows.Add(ProcessDataRecord<T>(dataItem, configuration, cultureInfo));
 				}
 			}
 
 			return dataRows;
 		}
 
-		private string ProcessDataRecord<T>(T dataRecord, DataProperty dataProperty) where T : class
+		private string ProcessDataRecord<T>(T dataRecord, DataProperty dataProperty, CultureInfo cultureInfo) where T : class
 		{
 			var maxLineLength = GetMaximumLineLength(dataProperty);
 			var maxLineCount = GetMaxLineCount(dataProperty);
@@ -273,7 +277,8 @@ namespace Eshava.Transition.Engines
 				DataRecord = dataRecord,
 				DataProperty = dataProperty,
 				MaxLineLength = maxLineLength,
-				MaxLineCount = maxLineCount
+				MaxLineCount = maxLineCount,
+				CultureInfo = cultureInfo
 			};
 
 			var dataRows = ProcessDataRecord(dataRecordSettings).ToList();
@@ -281,7 +286,7 @@ namespace Eshava.Transition.Engines
 			return TransformDataRowArraysToDataRowString(dataRows);
 		}
 
-		private string ProcessDataRecords<T>(IEnumerable<T> dataRecords, DataProperty dataProperty) where T : class
+		private string ProcessDataRecords<T>(IEnumerable<T> dataRecords, DataProperty dataProperty, CultureInfo cultureInfo) where T : class
 		{
 			var dataRows = new List<char[]>();
 			var maxLineLength = GetMaximumLineLength(dataProperty);
@@ -291,7 +296,8 @@ namespace Eshava.Transition.Engines
 			{
 				DataProperty = dataProperty,
 				MaxLineLength = maxLineLength,
-				MaxLineCount = maxLineCount
+				MaxLineCount = maxLineCount,
+				CultureInfo = cultureInfo
 			};
 
 			foreach (var dataRecord in dataRecords)
@@ -330,15 +336,15 @@ namespace Eshava.Transition.Engines
 
 					if (CheckIfIEnumerable(propertyInfo))
 					{
-						dataRows = ProcessEnumerableDataProperty(subDataRecordSettings);
+						dataRows = ProcessEnumerableDataProperty(subDataRecordSettings, dataRecordSettings.CultureInfo);
 					}
 					else if (CheckIfClass(propertyInfo))
 					{
-						dataRows = ProcessClassDataProperty(subDataRecordSettings);
+						dataRows = ProcessClassDataProperty(subDataRecordSettings, dataRecordSettings.CultureInfo);
 					}
 					else if (!childDataProperty.HasMapping)
 					{
-						ProcessPrimitiveDataProperty(subDataRecordSettings);
+						ProcessPrimitiveDataProperty(subDataRecordSettings, dataRecordSettings.CultureInfo);
 					}
 				}
 
@@ -401,14 +407,14 @@ namespace Eshava.Transition.Engines
 			return dataRowClones;
 		}
 
-		private void ProcessPrimitiveDataProperty(IEdiPrimitiveDataSettings settings)
+		private void ProcessPrimitiveDataProperty(IEdiPrimitiveDataSettings settings, CultureInfo cultureInfo)
 		{
 			if (!CheckConditionalDataProperty(settings.DataRecord, settings.DataProperty, settings.PropertyInfos))
 			{
 				return;
 			}
 
-			var rawValue = GetRawValue(settings.DataRecord, settings.PropertyInfo);
+			var rawValue = GetRawValue(settings.DataRecord, settings.PropertyInfo, cultureInfo);
 			if (!rawValue.IsNullOrEmpty())
 			{
 				rawValue = CheckAndApplyMapping(rawValue, settings.DataProperty);
@@ -428,7 +434,7 @@ namespace Eshava.Transition.Engines
 			}
 		}
 
-		private List<char[]> ProcessClassDataProperty(IEdiSubDataRecordSettings settings)
+		private List<char[]> ProcessClassDataProperty(IEdiSubDataRecordSettings settings, CultureInfo cultureInfo)
 		{
 			var dataRecordClass = settings.PropertyInfo.GetValue(settings.DataRecord);
 			if (dataRecordClass != null)
@@ -438,7 +444,8 @@ namespace Eshava.Transition.Engines
 					DataRecord = dataRecordClass,
 					DataProperty = settings.DataProperty,
 					MaxLineLength = settings.MaxLineLength,
-					MaxLineCount = settings.MaxLineCount
+					MaxLineCount = settings.MaxLineCount,
+					CultureInfo = cultureInfo
 				};
 
 				var classResult = ProcessDataRecord(dataRecordSettings).ToList();
@@ -448,7 +455,7 @@ namespace Eshava.Transition.Engines
 			return settings.TargetDataRows;
 		}
 
-		private List<char[]> ProcessEnumerableDataProperty(IEdiSubDataRecordEnumerableSettings settings)
+		private List<char[]> ProcessEnumerableDataProperty(IEdiSubDataRecordEnumerableSettings settings, CultureInfo cultureInfo)
 		{
 			var dataRecordEnumerable = settings.PropertyInfo.GetValue(settings.DataRecord) as System.Collections.IEnumerable;
 
@@ -460,7 +467,8 @@ namespace Eshava.Transition.Engines
 				{
 					DataProperty = settings.DataProperty,
 					MaxLineLength = settings.MaxLineLength,
-					MaxLineCount = settings.MaxLineCount
+					MaxLineCount = settings.MaxLineCount,
+					CultureInfo = cultureInfo
 				};
 
 				foreach (var subItem in dataRecordEnumerable)

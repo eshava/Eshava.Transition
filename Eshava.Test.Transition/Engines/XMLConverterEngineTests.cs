@@ -18,6 +18,7 @@ namespace Eshava.Test.Transition.Engines
 		private XMLConverterEngine _classUnderTest;
 		private string _inputFile = @"..\..\..\Input\Addresses.xml";
 		private string _inputFile2 = @"..\..\..\Input\Addresses2.xml";
+		private string _inputFileCulture = @"..\..\..\Input\culturetest.xml";
 
 		[TestInitialize]
 		public void Setup()
@@ -163,10 +164,14 @@ namespace Eshava.Test.Transition.Engines
 		[TestMethod]
 		public void XMLConvertWithoutRemoveDoubletsTest()
 		{
+			// Arrange
 			var data = File.ReadAllText(_inputFile, Encoding.UTF8);
 			var configuration = GetImportConfiguration();
+
+			// Act
 			var addresses = _classUnderTest.Convert<Address>(configuration.DataProperty, data, false).ToList();
 
+			// Assert
 			addresses.Should().HaveCount(4);
 			addresses[0].Communications.Should().HaveCount(2);
 			addresses[0].Contacts.Should().HaveCount(0);
@@ -241,10 +246,14 @@ namespace Eshava.Test.Transition.Engines
 		[TestMethod]
 		public void XMLConvertWithRemoveDoubletsTest()
 		{
+			// Arrange
 			var data = File.ReadAllText(_inputFile, Encoding.UTF8);
 			var configuration = GetImportConfiguration();
+
+			// Act
 			var addresses = _classUnderTest.Convert<Address>(configuration.DataProperty, data).ToList();
 
+			// Assert
 			addresses.Should().HaveCount(3);
 			addresses[0].Communications.Should().HaveCount(2);
 			addresses[0].Contacts.Should().HaveCount(2);
@@ -259,10 +268,14 @@ namespace Eshava.Test.Transition.Engines
 		[TestMethod]
 		public void XMLConvertCompanyWithoutRemoveDoubletsFromSource2Test()
 		{
+			// Arrange
 			var data = File.ReadAllText(_inputFile2, Encoding.UTF8);
 			var configuration = GetImportConfiguration(true, false);
+
+			// Act
 			var addresses = _classUnderTest.Convert<Company>(configuration.DataProperty, data, false).ToList();
 
+			// Assert
 			addresses.Should().HaveCount(4);
 			addresses[0].Communications.Should().HaveCount(2);
 			addresses[0].Contacts.Should().HaveCount(0);
@@ -337,10 +350,14 @@ namespace Eshava.Test.Transition.Engines
 		[TestMethod]
 		public void XMLExportConvertTest()
 		{
+			// Arrange
 			var data = _classUnderTest.Convert<Address>(GetImportConfiguration().DataProperty, File.ReadAllText(_inputFile, Encoding.UTF8), true).ToList();
 			var configuration = GetImportConfiguration();
+
+			// Act
 			var xmlData = _classUnderTest.Convert(configuration.DataProperty, data).ToArray();
 
+			// Assert
 			xmlData.Length.Should().Be(1);
 
 			var expectedResult = new StringBuilder();
@@ -455,10 +472,14 @@ namespace Eshava.Test.Transition.Engines
 		[TestMethod]
 		public void XMLExportConvertForCompanyTest()
 		{
+			// Arrange
 			var data = _classUnderTest.Convert<Company>(GetImportConfiguration(true, false).DataProperty, File.ReadAllText(_inputFile2, Encoding.UTF8), true).ToList();
 			var configuration = GetImportConfiguration(true, false);
+
+			// Act
 			var xmlData = _classUnderTest.Convert(configuration.DataProperty, data).ToArray();
 
+			// Assert
 			xmlData.Length.Should().Be(1);
 
 			var expectedResult = new StringBuilder();
@@ -567,10 +588,14 @@ namespace Eshava.Test.Transition.Engines
 		[TestMethod]
 		public void XMLExportConvertForCompanySplitExportTest()
 		{
+			// Arrange
 			var data = _classUnderTest.Convert<Company>(GetImportConfiguration(true, false).DataProperty, File.ReadAllText(_inputFile2, Encoding.UTF8), true).ToList();
 			var configuration = GetImportConfiguration(true, false, true);
+
+			// Act
 			var xmlData = _classUnderTest.Convert(configuration.DataProperty, data).ToArray();
 
+			// Assert
 			xmlData.Length.Should().Be(3);
 
 			var expectedResultOne = new StringBuilder();
@@ -692,6 +717,142 @@ namespace Eshava.Test.Transition.Engines
 			xmlData[0].Should().Be(expectedDocumentOne.OuterXml);
 			xmlData[1].Should().Be(expectedDocumentTwo.OuterXml);
 			xmlData[2].Should().Be(expectedDocumentThree.OuterXml);
+		}
+
+		[TestMethod]
+		public void ImportGermanCultureTest()
+		{
+			// Arrange
+			var data = File.ReadAllText(_inputFileCulture, Encoding.UTF8);
+			var configuration = new ConfigurationData
+			{
+				DataFormat = ContentFormat.Xml,
+				DataProperty = new DataProperty
+				{
+					CultureCode = "de-DE",
+					SplitExportResult = false,
+					PropertySource = "culturetest",
+					DataProperties = new List<DataProperty>
+					{
+						new DataProperty
+						{
+							DataProperties = new List<DataProperty>
+							{
+								new DataProperty
+								{
+									PropertySource = "culturetest",
+									DataProperties = new List<DataProperty>
+									{
+										new DataProperty {
+											PropertyTarget = "NumberOne",
+											PropertySource = "numberone"
+										},
+										new DataProperty {
+											PropertyTarget = "NumberTwo",
+											PropertySource = "numbertwo"
+										},
+										new DataProperty {
+											PropertyTarget = "NumberThree",
+											PropertySource = "numberthree"
+										},
+										new DataProperty {
+											PropertyTarget = "NumberFour",
+											PropertySource = "numberfour"
+										},
+										new DataProperty {
+											PropertyTarget = "NumberFive",
+											PropertySource = "numberfive"
+										}
+									}
+								}
+							}
+						}
+						
+					}
+				}
+			};
+
+			// Act
+			var cultureTest = _classUnderTest.Convert<CultureTest>(configuration.DataProperty, data, false).ToList();
+
+			// Assert
+			cultureTest.Should().HaveCount(1);
+			cultureTest.Single().NumberOne.Should().Be(10.15m);
+			cultureTest.Single().NumberTwo.Should().Be(20.25);
+			cultureTest.Single().NumberThree.Should().Be(30.35f);
+			cultureTest.Single().NumberFour.Should().Be(40);
+			cultureTest.Single().NumberFive.Should().Be(50);
+		}
+
+		[TestMethod]
+		public void ExportGermanCultureTest()
+		{
+			// Arrange
+			var cultureTest = new CultureTest
+			{
+				NumberOne = 10.15m,
+				NumberTwo = 20.25,
+				NumberThree = 30.35f,
+				NumberFour = 40,
+				NumberFive = 50L
+			};
+
+			var configuration = new ConfigurationData
+			{
+				DataFormat = ContentFormat.Xml,
+				DataProperty = new DataProperty
+				{
+					CultureCode = "de-DE",
+					SplitExportResult = false,
+					PropertySource = "culturetest",
+					DataProperties = new List<DataProperty>
+					{
+						new DataProperty
+						{
+							DataProperties = new List<DataProperty>
+							{
+								new DataProperty
+								{
+									PropertySource = "culturetest",
+									DataProperties = new List<DataProperty>
+									{
+										new DataProperty {
+											PropertyTarget = "NumberOne",
+											PropertySource = "numberone"
+										},
+										new DataProperty {
+											PropertyTarget = "NumberTwo",
+											PropertySource = "numbertwo"
+										},
+										new DataProperty {
+											PropertyTarget = "NumberThree",
+											PropertySource = "numberthree"
+										},
+										new DataProperty {
+											PropertyTarget = "NumberFour",
+											PropertySource = "numberfour"
+										},
+										new DataProperty {
+											PropertyTarget = "NumberFive",
+											PropertySource = "numberfive"
+										}
+									}
+								}
+							}
+						}
+
+					}
+				}
+			};
+
+			// Act
+			var result = _classUnderTest.Convert(configuration.DataProperty, new List<CultureTest> { cultureTest }).ToList();
+
+			// Assert
+			var data = File.ReadAllText(_inputFileCulture, Encoding.UTF8).Replace(" ", "").Replace("\r", "").Replace("\n", "").Replace("\t", "");
+
+			result.Should().HaveCount(1);
+			result.Single().Replace(" ", "").Replace("\r", "").Replace("\n", "").Should().Be(data);
 		}
 	}
 }

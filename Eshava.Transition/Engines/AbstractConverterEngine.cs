@@ -79,17 +79,10 @@ namespace Eshava.Transition.Engines
 			return Activator.CreateInstance(constructed);
 		}
 
-		protected void SetPropertyValue(PropertyInfo propertyInfo, object dataRecord, object rawValue)
+		protected void SetPropertyValue(PropertyInfo propertyInfo, object dataRecord, object rawValue, CultureInfo cultureInfo)
 		{
-			try
-			{
-				var value = Convert.ChangeType(rawValue, propertyInfo.PropertyType);
-				propertyInfo.SetValue(dataRecord, value);
-			}
-			catch (InvalidCastException)
-			{
-				//ToDo: Ignore or log
-			}
+			var value = Convert.ChangeType(rawValue, propertyInfo.PropertyType, cultureInfo);
+			propertyInfo.SetValue(dataRecord, value);
 		}
 
 		protected object InitDataRecordEnumerable(object dataRecord, PropertyInfo propertyInfo)
@@ -229,17 +222,17 @@ namespace Eshava.Transition.Engines
 			return true;
 		}
 
-		protected string GetRawValue(object dataRecord, PropertyInfo propertyInfo)
+		protected string GetRawValue(object dataRecord, PropertyInfo propertyInfo, CultureInfo cultureInfo)
 		{
 			string rawValue = null;
 			var rawValueBoxed = propertyInfo.GetValue(dataRecord);
 			if (rawValueBoxed != null && propertyInfo.PropertyType.IsInteger() || propertyInfo.PropertyType.IsInteger())
 			{
-				rawValue = System.Convert.ToInt64(rawValueBoxed).ToString(CultureInfo.InvariantCulture);
+				rawValue = System.Convert.ToInt64(rawValueBoxed).ToString(cultureInfo);
 			}
 			else if (rawValueBoxed != null && propertyInfo.PropertyType.IsDecimal())
 			{
-				rawValue = System.Convert.ToDecimal(rawValueBoxed).ToString(CultureInfo.InvariantCulture);
+				rawValue = System.Convert.ToDecimal(rawValueBoxed).ToString(cultureInfo);
 			}
 			else
 			{

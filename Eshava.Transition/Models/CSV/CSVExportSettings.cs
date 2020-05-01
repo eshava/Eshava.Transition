@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Globalization;
+using System.Reflection;
 
 namespace Eshava.Transition.Models.CSV
 {
@@ -11,5 +12,6 @@ namespace Eshava.Transition.Models.CSV
 		public PropertyInfo PropertyInfo { get; set; }
 
 		public PropertyInfo[] PropertyInfos { get; set; }
+		public CultureInfo CultureInfo { get; set; }
 	}
 }
