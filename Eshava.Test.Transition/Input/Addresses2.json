@@ -1,0 +1,110 @@
+﻿[
+  {
+    "kundennummer": "Kdn0001",
+    "unternehmen": "Alphabet",
+    "anschrift": {
+      "strasse": "ABC Allee 123",
+      "plz": 12345,
+      "ort": "Digenskirchen",
+      "land": "Deutschland"
+    },
+    "kommunikationen": [
+      {
+        "type": "mail",
+        "wert": "info@alphabet.de"
+      },
+      {
+        "type": "phone",
+        "wert": "+4985 123450"
+      }
+    ]
+  },
+  {
+    "kundennummer": "Kdn0003",
+    "unternehmen": "TWC AG",
+    "anschrift": {
+      "strasse": "Deep Link Avenue 1",
+      "plz": 45110,
+      "ort": "Pirna",
+      "land": "Deutschland"
+    },
+    "ansprechpartner": [
+      {
+        "anrede": "Frau",
+        "vorname": "Lasmiranda",
+        "nachname": "Dennsiewillja",
+        "position": "Sonstiges",
+        "kommunikationen": [
+          {
+            "type": "mail",
+            "wert": "l.d@twc-ag.net"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "kundennummer": "Kdn0001",
+    "unternehmen": "Alphabet",
+    "anschrift": {
+      "strasse": "ABC Allee 123",
+      "plz": 12345,
+      "ort": "Digenskirchen",
+      "land": "Deutschland"
+    },
+    "ansprechpartner": [
+      {
+        "anrede": "Herr",
+        "vorname": "Holger",
+        "nachname": "Wastow",
+        "position": "F&E",
+        "kommunikationen": [
+          {
+            "type": "mail",
+            "wert": "h.wastow@alphabet.de"
+          },
+          {
+            "type": "phone",
+            "wert": "+4985 1234567"
+          },
+          {
+            "type": "mobile",
+            "wert": "+49151 89898989"
+          }
+        ]
+      },
+      {
+        "anrede": "Frau",
+        "vorname": "Emmen",
+        "nachname": "Taler",
+        "position": "Kundenservice",
+        "kommunikationen": [
+          {
+            "type": "mail",
+            "wert": "e.taler@alphabet.de"
+          },
+          {
+            "type": "phone",
+            "wert": "+4985 1234589"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "kundennummer": "Kdn0002",
+    "unternehmen": "Spielwaren GmbH",
+    "anschrift": {
+      "strasse": "Fun Road 666",
+      "plz": 98765,
+      "ort": "Entenhausen",
+      "land": "Deutschland"
+    },
+    "kommunikationen": [
+      {
+        "type": "mail",
+        "wert": "contact@spielwaren-gmbh.de"
+      }
+    ]
+  }
+]

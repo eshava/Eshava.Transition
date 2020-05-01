@@ -1,0 +1,111 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<adressen>
+  <adresse>
+    <kundennummer>Kdn0001</kundennummer>
+    <unternehmen>Alphabet</unternehmen>
+    <anschrift>
+      <strasse>ABC Allee 123</strasse>
+      <plz>12345</plz>
+      <ort>Digenskirchen</ort>
+      <land>Deutschland</land>
+    </anschrift>
+    <kommunikationen>
+      <kommunikation>
+        <type>mail</type>
+        <wert>info@alphabet.de</wert>
+      </kommunikation>
+      <kommunikation>
+        <type>phone</type>
+        <wert>+4985 123450</wert>
+      </kommunikation>
+    </kommunikationen>
+  </adresse>
+  <adresse>
+    <kundennummer>Kdn0003</kundennummer>
+    <unternehmen>TWC AG</unternehmen>
+    <anschrift>
+      <strasse>Deep Link Avenue 1</strasse>
+      <plz>45110</plz>
+      <ort>Pirna</ort>
+      <land>Deutschland</land>
+    </anschrift>
+    <ansprechpartner>
+      <kontakt>
+        <anrede>Frau</anrede>
+        <vorname>Lasmiranda</vorname>
+        <nachname>Dennsiewillja</nachname>
+        <position>Sonstiges</position>
+        <kommunikationen>
+          <kommunikation>
+            <type>mail</type>
+            <wert>l.d@twc-ag.net</wert>
+          </kommunikation>
+        </kommunikationen>
+      </kontakt>
+    </ansprechpartner>
+  </adresse>
+  <adresse>
+    <kundennummer>Kdn0001</kundennummer>
+    <unternehmen>Alphabet</unternehmen>
+    <anschrift>
+      <strasse>ABC Allee 123</strasse>
+      <plz>12345</plz>
+      <ort>Digenskirchen</ort>
+      <land>Deutschland</land>
+    </anschrift>
+    <ansprechpartner>
+      <kontakt>
+        <anrede>Herr</anrede>
+        <vorname>Holger</vorname>
+        <nachname>Wastow</nachname>
+        <position>F&amp;E</position>
+        <kommunikationen>
+          <kommunikation>
+            <type>mail</type>
+            <wert>h.wastow@alphabet.de</wert>
+          </kommunikation>
+          <kommunikation>
+            <type>phone</type>
+            <wert>+4985 1234567</wert>
+          </kommunikation>
+          <kommunikation>
+            <type>mobile</type>
+            <wert>+49151 89898989</wert>
+          </kommunikation>
+        </kommunikationen>
+      </kontakt>
+      <kontakt>
+        <anrede>Frau</anrede>
+        <vorname>Emmen</vorname>
+        <nachname>Taler</nachname>
+        <position>Kundenservice</position>
+        <kommunikationen>
+          <kommunikation>
+            <type>mail</type>
+            <wert>e.taler@alphabet.de</wert>
+          </kommunikation>
+          <kommunikation>
+            <type>phone</type>
+            <wert>+4985 1234589</wert>
+          </kommunikation>
+        </kommunikationen>
+      </kontakt>
+    </ansprechpartner>
+  </adresse>
+  <adresse>
+    <kundennummer>Kdn0002</kundennummer>
+    <unternehmen>Spielwaren GmbH</unternehmen>
+    <anschrift>
+      <strasse>Fun Road 666</strasse>
+      <plz>98765</plz>
+      <ort>Entenhausen</ort>
+      <land>Deutschland</land>
+    </anschrift>
+    <kommunikationen>
+      <kommunikation>
+        <type>mail</type>
+        <wert>contact@spielwaren-gmbh.de</wert>
+      </kommunikation>
+    </kommunikationen>
+  </adresse>
+</adressen>

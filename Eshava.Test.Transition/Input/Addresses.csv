@@ -1,0 +1,8 @@
+﻿
+
+KundenNr;Unternehmen;Strasse;PLZ;Ort;Land;EmailZentrale;TelefonZentrale;Anrede;Vorname;Nachname;Position;Email;Telefon;Mobil
+Kdn0001;Alphabet;ABC Allee 123;12345;Digenskirchen;DE;info@alphabet.de;+4985 123450;
+Kdn0003;TWC AG;Deep Link Avenue 1;45110;Pirna;DE;;;Frau;Lasmiranda;Dennsiewillja;Sonstiges;l.d@twc-ag.net
+Kdn0001;Alphabet;ABC Allee 123;12345;Digenskirchen;DE;info@alphabet.de;+4985 123450;Herr;Holger;Wastow;F&E;h.wastow@alphabet.de;+4985 1234567;+49151 89898989
+Kdn0001;Alphabet;ABC Allee 123;12345;Digenskirchen;DE;info@alphabet.de;+4985 123450;Frau;Emmen;Taler;Kundenservice;e.taler@alphabet.de;+4985 1234589
+Kdn0002;Spielwaren GmbH;Fun Road 666;98765;Entenhausen;DE;contact@spielwaren-gmbh.de
