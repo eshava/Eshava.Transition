@@ -44,6 +44,7 @@ namespace Eshava.Transition.Models
 		#endregion
 
 		#region csv
+		public bool HasSurroundingQuotationMarksCSV { get; set; }
 		public int StartRowIndexCSV { get; set; }
 		public bool HasColumnNamesCSV { get; set; }
 		public char SeparatorCSVColumn { get; set; }

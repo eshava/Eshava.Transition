@@ -204,9 +204,6 @@ namespace Eshava.Transition.Engines
 			return itemsToAdd;
 		}
 
-
-
-
 		protected bool CheckConditionalDataProperty(object dataRecord, DataProperty childDataPropery, PropertyInfo[] propertyInfos)
 		{
 			if (!childDataPropery.ConditionalPropertyName.IsNullOrEmpty() && !childDataPropery.ConditionalPropertyValue.IsNullOrEmpty())

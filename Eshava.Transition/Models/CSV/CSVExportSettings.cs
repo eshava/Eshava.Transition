@@ -13,5 +13,6 @@ namespace Eshava.Transition.Models.CSV
 
 		public PropertyInfo[] PropertyInfos { get; set; }
 		public CultureInfo CultureInfo { get; set; }
+		public bool HasSurroundingQuotationMarks { get; set; }
 	}
 }

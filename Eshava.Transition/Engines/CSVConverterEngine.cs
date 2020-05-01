@@ -33,7 +33,8 @@ namespace Eshava.Transition.Engines
 				ColumnNames = GetColumnNames(dataRows, configuration.SeparatorCSVColumn, configuration.HasColumnNamesCSV, configuration.StartRowIndexCSV),
 				Properties = configuration.DataProperties,
 				Separator = configuration.SeparatorCSVColumn,
-				CultureInfo = configuration.CultureCode.GetCultureInfo()
+				CultureInfo = configuration.CultureCode.GetCultureInfo(),
+				HasSurroundingQuotationMarks = configuration.HasSurroundingQuotationMarksCSV
 			};
 
 			var startRowIndex = configuration.StartRowIndexCSV + (configuration.HasColumnNamesCSV ? 1 : 0);
@@ -88,7 +89,20 @@ namespace Eshava.Transition.Engines
 
 		private T ProcessDataRow<T>(CSVSettings settings) where T : class
 		{
-			var dataCells = settings.DataRow.Replace("\n", "").Trim().Split(settings.Separator);
+			string[] dataCells;
+			var dataRow = settings.DataRow.Replace("\n", "").Trim();
+			if (settings.HasSurroundingQuotationMarks)
+			{
+				dataCells = dataRow.Split('\"').Where(part => part != settings.Separator.ToString()).Skip(1).ToArray();
+				if (dataCells.Last().IsNullOrEmpty() && !dataRow.EndsWith(settings.Separator.ToString()))
+				{
+					dataCells = dataCells.Take(dataCells.Length - 1).ToArray();
+				}
+			}
+			else
+			{
+				dataCells = dataRow.Split(settings.Separator);
+			}
 
 			var dataRecordSettings = new CSVSettingsDataRecord
 			{
@@ -152,7 +166,6 @@ namespace Eshava.Transition.Engines
 					}
 
 					var rawValue = settings.DataCells[columnIndex];
-
 					if (propertyTarget.ValueMappings != null)
 					{
 						var mapping = propertyTarget.ValueMappings.FirstOrDefault(m => m.Source.Equals(rawValue, StringComparison.OrdinalIgnoreCase));
@@ -245,7 +258,7 @@ namespace Eshava.Transition.Engines
 			var columnHeaderRow = GetColumnHeaderRow(configuration);
 			var dataRows = new List<string[]>();
 			var cultureInfo = configuration.CultureCode.GetCultureInfo();
-						
+
 			if (configuration.HasColumnNamesCSV)
 			{
 				dataRows.Add(columnHeaderRow);
@@ -253,18 +266,18 @@ namespace Eshava.Transition.Engines
 
 			foreach (var dataItem in data)
 			{
-				dataRows.AddRange(ProcessDataRecord(dataItem, configuration, columnHeaderRow.Length, cultureInfo));
+				dataRows.AddRange(ProcessDataRecord(dataItem, configuration, columnHeaderRow.Length, cultureInfo, configuration.HasSurroundingQuotationMarksCSV));
 			}
 
 			return new[] { TransformDataRowArraysToDataRowString(dataRows, configuration.SeparatorCSVColumn) };
 		}
 
-		private IEnumerable<string[]> ProcessDataRecord<T>(T dataRecord, DataProperty dataProperty, int columnCount, CultureInfo cultureInfo) where T : class
+		private IEnumerable<string[]> ProcessDataRecord<T>(T dataRecord, DataProperty dataProperty, int columnCount, CultureInfo cultureInfo, bool hasSurroundingQuotationMarks) where T : class
 		{
-			return ProcessDataRecord(dataRecord, dataProperty, new string[columnCount], cultureInfo);
+			return ProcessDataRecord(dataRecord, dataProperty, new string[columnCount], cultureInfo, hasSurroundingQuotationMarks);
 		}
 
-		private IEnumerable<string[]> ProcessDataRecord(object dataRecord, DataProperty dataProperty, string[] dataRow, CultureInfo cultureInfo)
+		private IEnumerable<string[]> ProcessDataRecord(object dataRecord, DataProperty dataProperty, string[] dataRow, CultureInfo cultureInfo, bool hasSurroundingQuotationMarks)
 		{
 			var originDataRow = dataRow;
 			var dataRows = new List<string[]>();
@@ -286,7 +299,8 @@ namespace Eshava.Transition.Engines
 							DataRow = dataRow,
 							DataProperty = childDataProperty,
 							PropertyInfo = propertyInfo,
-							CultureInfo = cultureInfo
+							CultureInfo = cultureInfo,
+							HasSurroundingQuotationMarks = hasSurroundingQuotationMarks
 						};
 
 						if (CheckIfIEnumerable(propertyInfo))
@@ -345,12 +359,18 @@ namespace Eshava.Transition.Engines
 				return;
 			}
 
-			var rawValue = GetRawValue(settings.DataRecord, settings.PropertyInfo, settings.CultureInfo);
+			var rawValue = GetRawValue(settings.DataRecord, settings.PropertyInfo, settings.CultureInfo) ?? "";
 			if (!rawValue.IsNullOrEmpty())
 			{
 				rawValue = CheckAndApplyMapping(rawValue, settings.DataProperty);
-				settings.DataRow[settings.DataProperty.PropertySourceIndexCSV] = rawValue;
 			}
+
+			if (settings.HasSurroundingQuotationMarks)
+			{
+				rawValue = $"\"{rawValue}\"";
+			}
+
+			settings.DataRow[settings.DataProperty.PropertySourceIndexCSV] = rawValue;
 		}
 
 		private string[] ProcessClassDataProperty(CSVExportSettings settings)
@@ -358,7 +378,7 @@ namespace Eshava.Transition.Engines
 			var dataRecordClass = settings.PropertyInfo.GetValue(settings.DataRecord);
 			if (dataRecordClass != null)
 			{
-				settings.DataRow = ProcessDataRecord(dataRecordClass, settings.DataProperty, settings.DataRow, settings.CultureInfo).First();
+				settings.DataRow = ProcessDataRecord(dataRecordClass, settings.DataProperty, settings.DataRow, settings.CultureInfo, settings.HasSurroundingQuotationMarks).First();
 			}
 
 			return settings.DataRow;
@@ -373,7 +393,7 @@ namespace Eshava.Transition.Engines
 				foreach (var subItem in dataRecordEnumerable)
 				{
 					var currentDataRow = settings.DataProperty.IsSameDataRecord ? settings.DataRow : originDataRow.ToArray();
-					var enumerableResult = ProcessDataRecord(subItem, settings.DataProperty, currentDataRow, settings.CultureInfo);
+					var enumerableResult = ProcessDataRecord(subItem, settings.DataProperty, currentDataRow, settings.CultureInfo, settings.HasSurroundingQuotationMarks);
 
 					if (settings.DataProperty.IsSameDataRecord)
 					{

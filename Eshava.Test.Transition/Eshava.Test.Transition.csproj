@@ -7,6 +7,7 @@
     <Authors>Eshava</Authors>
     <PackageProjectUrl>https://github.com/eshava/transition</PackageProjectUrl>
     <Description>A library to transform text file into c# objects and vice versa</Description>
+    <Version>1.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
