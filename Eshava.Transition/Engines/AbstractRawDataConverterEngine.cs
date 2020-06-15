@@ -69,6 +69,11 @@ namespace Eshava.Transition.Engines
 
 		private void ProcessPrimitiveDataTypeProperty(SettingType settings)
 		{
+			ProcessPrimitiveDataTypeProperty(settings, (s, rawValue) => SetPropertyValue(s.PropertyInfo, s.DataRecord, rawValue, s.CultureInfo));
+		}
+
+		protected void ProcessPrimitiveDataTypeProperty(SettingType settings, Action<SettingType, string> setPropertyValue)
+		{
 			var rawValue = GetValue(settings.RawDataNode).Trim();
 
 			if (rawValue.IsNullOrEmpty())
@@ -86,7 +91,7 @@ namespace Eshava.Transition.Engines
 				}
 			}
 
-			SetPropertyValue(settings.PropertyInfo, settings.DataRecord, rawValue, settings.CultureInfo);
+			setPropertyValue(settings, rawValue);
 		}
 	}
 }

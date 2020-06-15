@@ -50,5 +50,9 @@ namespace Eshava.Transition.Models
 		public char SeparatorCSVColumn { get; set; }
 		public int PropertySourceIndexCSV { get; set; }            /* Export */
 		#endregion
+
+		#region xml
+		public IEnumerable<AdditionalPropertyData> AdditionalPropertyData { get; set; }            /* Export */
+		#endregion
 	}
 }
