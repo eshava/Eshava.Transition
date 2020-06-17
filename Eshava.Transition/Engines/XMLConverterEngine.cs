@@ -249,52 +249,89 @@ namespace Eshava.Transition.Engines
 
 			var additionAttributes = GetAdditionalPropertyData(AdditionalPropertyDataType.Attribute, parentSettings.DataProperty);
 			AddAttributesToNode(parentSettings.Document, xmlNode, additionAttributes);
-
-			foreach (var childDataProperty in parentSettings.DataProperty.DataProperties)
-			{
-				var propertyInfo = propertyInfos.SingleOrDefault(pi => pi.Name.Equals(childDataProperty.PropertyTarget));
-
-				var settings = new XMLSettings
-				{
-					Document = parentSettings.Document,
-					DataProperty = childDataProperty,
-					PropertyInfo = propertyInfo,
-					PropertyInfos = propertyInfos,
-					DataRecord = parentSettings.DataRecord,
-					RawDataNode = xmlNode,
-					CultureInfo = parentSettings.CultureInfo
-				};
-
-				if (propertyInfo != null)
-				{
-					if (CheckIfIEnumerable(propertyInfo))
-					{
-						BuildAndAddPropertyNodes(settings, xmlNode, ProcessEnumerableDataProperty);
-					}
-					else if (CheckIfClass(propertyInfo))
-					{
-						BuildAndAddPropertyNodes(settings, xmlNode, ProcessClassDataProperty);
-					}
-					else if (!childDataProperty.HasMapping)
-					{
-						ProcessPrimitiveDataProperty(settings);
-					}
-				}
-				else if (!childDataProperty.PropertySource.IsNullOrEmpty())
-				{
-					BuildAndAddPropertyNodes(settings, xmlNode, ProcessDataRecord);
-				}
-			}
+			ProcessDataRecordProperty(parentSettings, propertyInfos, xmlNode);
 
 			return extractFirstChild ? xmlNode.FirstChild : xmlNode;
 		}
 
-		private void BuildAndAddPropertyNodes(XMLSettings settings, XmlNode parentNode, Func<XMLSettings, XmlNode> buildPropertyNode)
+		private void ProcessDataRecordProperty(XMLSettings parentSettings, System.Reflection.PropertyInfo[] propertyInfos, XmlNode xmlNode)
+		{
+			if (parentSettings.DataProperty.DataProperties != null)
+			{
+				foreach (var childDataProperty in parentSettings.DataProperty.DataProperties)
+				{
+					var propertyInfo = propertyInfos.SingleOrDefault(pi => pi.Name.Equals(childDataProperty.PropertyTarget));
+					if (propertyInfo == null && childDataProperty.IsAttribute)
+					{
+						continue;
+					}
+
+					var settings = new XMLSettings
+					{
+						Document = parentSettings.Document,
+						DataProperty = childDataProperty,
+						PropertyInfo = propertyInfo,
+						PropertyInfos = propertyInfos,
+						DataRecord = parentSettings.DataRecord,
+						RawDataNode = xmlNode,
+						CultureInfo = parentSettings.CultureInfo
+					};
+
+					if (propertyInfo != null)
+					{
+						if (childDataProperty.IsAttribute)
+						{
+							SetAttributeOnNode(settings);
+						}
+						else if (CheckIfIEnumerable(propertyInfo))
+						{
+							ProcessDataPropertyAttributes(settings, BuildAndAddPropertyNodes(settings, xmlNode, ProcessEnumerableDataProperty));
+						}
+						else if (CheckIfClass(propertyInfo))
+						{
+							ProcessDataPropertyAttributes(settings, BuildAndAddPropertyNodes(settings, xmlNode, ProcessClassDataProperty));
+						}
+						else if (!childDataProperty.HasMapping)
+						{
+							ProcessDataPropertyAttributes(settings, ProcessPrimitiveDataProperty(settings));
+						}
+					}
+					else if (!childDataProperty.PropertySource.IsNullOrEmpty())
+					{
+						BuildAndAddPropertyNodes(settings, xmlNode, ProcessDataRecord);
+					}
+				}
+			}
+		}
+
+		private void ProcessDataPropertyAttributes(XMLSettings settings, XmlNode xmlNode)
+		{
+			if (xmlNode == null)
+			{
+				return;
+			}
+
+			var dataProperties = settings.DataProperty.DataProperties;
+			var dataPropertiesAttributes = settings.DataProperty.DataProperties?.Where(d => d.IsAttribute).ToList();
+
+			if (dataPropertiesAttributes == null || !dataPropertiesAttributes.Any())
+			{
+				return;
+			}
+
+			settings.DataProperty.DataProperties = dataPropertiesAttributes;
+
+			ProcessDataRecordProperty(settings, settings.PropertyInfos, xmlNode);
+
+			settings.DataProperty.DataProperties = dataProperties;
+		}
+
+		private XmlNode BuildAndAddPropertyNodes(XMLSettings settings, XmlNode parentNode, Func<XMLSettings, XmlNode> buildPropertyNode)
 		{
 			var propertyNode = buildPropertyNode(settings);
 			if (propertyNode == null)
 			{
-				return;
+				return null;
 			}
 
 			var additionAttributes = GetAdditionalPropertyData(AdditionalPropertyDataType.Attribute, settings.DataProperty);
@@ -311,26 +348,29 @@ namespace Eshava.Transition.Engines
 			{
 				parentNode.AppendChild(propertyNode);
 			}
+
+			return propertyNode;
 		}
 
-		private void ProcessPrimitiveDataProperty(XMLSettings settings)
+		private XmlNode ProcessPrimitiveDataProperty(XMLSettings settings)
 		{
 			if (!CheckConditionalDataProperty(settings.DataRecord, settings.DataProperty, settings.PropertyInfos))
 			{
-				return;
+				return null;
 			}
 
 			var rawValue = GetRawValue(settings.DataRecord, settings.PropertyInfo, settings.CultureInfo);
-			ProcessPrimitiveDataProperty(settings, rawValue);
+			
+			return ProcessPrimitiveDataProperty(settings, rawValue);
 		}
 
-		private void ProcessPrimitiveDataProperty(XMLSettings settings, string rawValue)
+		private XmlNode ProcessPrimitiveDataProperty(XMLSettings settings, string rawValue)
 		{
 			var additionAttributes = GetAdditionalPropertyData(AdditionalPropertyDataType.Attribute, settings.DataProperty);
 
 			if (rawValue.IsNullOrEmpty() && !additionAttributes.Any())
 			{
-				return;
+				return null;
 			}
 
 			var propertyNode = settings.Document.CreateNode(XmlNodeType.Element, settings.DataProperty.PropertySource, null);
@@ -343,6 +383,8 @@ namespace Eshava.Transition.Engines
 			AddAttributesToNode(settings.Document, propertyNode, additionAttributes);
 
 			settings.RawDataNode.AppendChild(propertyNode);
+
+			return propertyNode;
 		}
 
 		private XmlNode ProcessClassDataProperty(XMLSettings settings)
@@ -366,10 +408,14 @@ namespace Eshava.Transition.Engines
 				{
 					if (CheckIfClass(subItemType))
 					{
-						var resultItem = ProcessDataRecord(new XMLSettings { DataRecord = subItem, DataProperty = settings.DataProperty.DataProperties.First(), Document = settings.Document, CultureInfo = settings.CultureInfo });
+						var resultItemSettings = new XMLSettings { DataRecord = subItem, DataProperty = settings.DataProperty.DataProperties.First(), Document = settings.Document, CultureInfo = settings.CultureInfo };
+						var resultItem = ProcessDataRecord(resultItemSettings);
 						if (resultItem != null)
 						{
 							result.AppendChild(resultItem);
+							resultItemSettings.DataRecord = settings.DataRecord;
+							resultItemSettings.PropertyInfos = settings.PropertyInfos;
+							ProcessDataPropertyAttributes(resultItemSettings, resultItem);
 						}
 					}
 					else
@@ -386,7 +432,12 @@ namespace Eshava.Transition.Engines
 						};
 
 						var rawValue = GetRawValue(subItemType, subItem, settings.CultureInfo);
-						ProcessPrimitiveDataProperty(subSettings, rawValue);
+						var childNode = ProcessPrimitiveDataProperty(subSettings, rawValue);
+						if (childNode != null)
+						{
+							subSettings.DataRecord = settings.DataRecord;
+							ProcessDataRecordProperty(subSettings, settings.PropertyInfos, childNode);
+						}
 					}
 				}
 			}
@@ -412,6 +463,20 @@ namespace Eshava.Transition.Engines
 					node.Attributes.Append(attribute);
 				}
 			}
+		}
+
+		private void SetAttributeOnNode(XMLSettings settings)
+		{
+			if (CheckIfClass(settings.PropertyInfo.PropertyType) || CheckIfIEnumerable(settings.PropertyInfo))
+			{
+				return;
+			}
+
+			var attribute = settings.Document.CreateAttribute(settings.DataProperty.PropertySource);
+			var value = GetRawValue(settings.DataRecord, settings.PropertyInfo, settings.CultureInfo);
+
+			attribute.Value = value;
+			settings.RawDataNode.Attributes.Append(attribute);
 		}
 	}
 }
