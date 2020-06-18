@@ -15,7 +15,7 @@ namespace Eshava.Transition.Engines
 	{
 		protected IEnumerable<T> RemoveDoublets<T>(DataProperty configuration, IEnumerable<T> dataRecords) where T : class
 		{
-			if (!configuration.MappingProperties.Any())
+			if (!(configuration.MappingProperties?.Any() ?? false))
 			{
 				return dataRecords;
 			}
@@ -55,9 +55,15 @@ namespace Eshava.Transition.Engines
 
 		protected bool CheckIfClass(PropertyInfo propertyInfo)
 		{
-			return propertyInfo.PropertyType.IsClass &&
-				   !Equals(propertyInfo.PropertyType, typeof(string)) &&
-				   !propertyInfo.PropertyType.ImplementsIEnumerable();
+			return CheckIfClass(propertyInfo.PropertyType);
+		}
+
+		protected bool CheckIfClass(Type type)
+		{
+			return type.IsClass
+				&& !Equals(type, typeof(string))
+				&& !type.ImplementsIEnumerable()
+				;
 		}
 
 		protected bool CheckIfIEnumerable(PropertyInfo propertyInfo)
@@ -104,7 +110,9 @@ namespace Eshava.Transition.Engines
 
 			foreach (var child in childs)
 			{
-				if (!(child as IEmpty).IsEmpty)
+				var isIEmpty = child.GetType().ImplementsInterface(typeof(IEmpty));
+
+				if ((isIEmpty && !(child as IEmpty).IsEmpty) || (!isIEmpty && child != null))
 				{
 					methodInfoAdd.Invoke(dataRecordEnumerable, new[] { child });
 				}
@@ -221,15 +229,21 @@ namespace Eshava.Transition.Engines
 
 		protected string GetRawValue(object dataRecord, PropertyInfo propertyInfo, CultureInfo cultureInfo)
 		{
-			string rawValue = null;
 			var rawValueBoxed = propertyInfo.GetValue(dataRecord);
-			if (rawValueBoxed != null && propertyInfo.PropertyType.IsInteger() || propertyInfo.PropertyType.IsInteger())
+
+			return GetRawValue(propertyInfo.PropertyType, rawValueBoxed, cultureInfo);
+		}
+
+		protected string GetRawValue(Type type, object rawValueBoxed, CultureInfo cultureInfo)
+		{
+			string rawValue;
+			if (rawValueBoxed != null && type.IsInteger() || type.IsInteger())
 			{
-				rawValue = System.Convert.ToInt64(rawValueBoxed).ToString(cultureInfo);
+				rawValue = Convert.ToInt64(rawValueBoxed).ToString(cultureInfo);
 			}
-			else if (rawValueBoxed != null && propertyInfo.PropertyType.IsDecimal())
+			else if (rawValueBoxed != null && type.IsDecimal())
 			{
-				rawValue = System.Convert.ToDecimal(rawValueBoxed).ToString(cultureInfo);
+				rawValue = Convert.ToDecimal(rawValueBoxed).ToString(cultureInfo);
 			}
 			else
 			{

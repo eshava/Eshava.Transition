@@ -767,7 +767,7 @@ namespace Eshava.Test.Transition.Engines
 								}
 							}
 						}
-						
+
 					}
 				}
 			};
@@ -853,6 +853,1047 @@ namespace Eshava.Test.Transition.Engines
 
 			result.Should().HaveCount(1);
 			result.Single().Replace(" ", "").Replace("\r", "").Replace("\n", "").Should().Be(data);
+		}
+
+		[TestMethod]
+		public void ExportAdditionalPropertyData()
+		{
+			// Arrange
+			var alpha = new AdditionalPropertyDataRoot
+			{
+				Beta = "One",
+				Gamma = new AdditionalPropertyDataOne
+				{
+					Delta = "Two"
+				},
+				Epsilon = new List<string>
+				{
+					"Three",
+					"Four"
+				},
+				Zeta = new List<AdditionalPropertyDataTwo>
+				{
+					new AdditionalPropertyDataTwo
+					{
+						Eta = "Five",
+						Theta = "Six"
+					},
+					new AdditionalPropertyDataTwo
+					{
+						Eta = "Seven",
+						Theta = "Eight"
+					}
+				}
+			};
+
+			var configuration = new ConfigurationData
+			{
+				DataFormat = ContentFormat.Xml,
+				DataProperty = new DataProperty
+				{
+					PropertySource = "alpha",
+					DataProperties = new List<DataProperty>
+					{
+						new DataProperty
+						{
+							DataProperties = new List<DataProperty>
+							{
+								new DataProperty
+								{
+									PropertySource = "alpha",
+									AdditionalPropertyData = new List<AdditionalPropertyData>
+									{
+										new AdditionalPropertyData
+										{
+											Type = AdditionalPropertyDataType.None,
+											Name ="noise",
+											Value = "noise",
+										},
+										new AdditionalPropertyData
+										{
+											Type = AdditionalPropertyDataType.Attribute,
+											Name ="color",
+											Value = "red",
+										}
+									},
+									DataProperties = new List<DataProperty>
+									{
+										new DataProperty
+										{
+											PropertyTarget = "Beta",
+											PropertySource = "beta",
+											AdditionalPropertyData = new List<AdditionalPropertyData>
+											{
+												new AdditionalPropertyData
+												{
+													Type = AdditionalPropertyDataType.Attribute,
+													Name ="color",
+													Value = "purple",
+												}
+											}
+										},
+										new DataProperty
+										{
+											PropertyTarget = "Gamma",
+											PropertySource = "gamma",
+											AdditionalPropertyData = new List<AdditionalPropertyData>
+											{
+												new AdditionalPropertyData
+												{
+													Type = AdditionalPropertyDataType.Attribute,
+													Name ="color",
+													Value = "orange",
+												}
+											},
+											DataProperties = new List<DataProperty>
+											{
+												new DataProperty
+												{
+													PropertyTarget = "Delta",
+													PropertySource = "delta",
+													AdditionalPropertyData = new List<AdditionalPropertyData>
+													{
+														new AdditionalPropertyData
+														{
+															Type = AdditionalPropertyDataType.Attribute,
+															Name ="color",
+															Value = "yellow",
+														}
+													}
+												}
+											}
+										},
+										new DataProperty
+										{
+											PropertyTarget = "Epsilon",
+											PropertySource = "epsilons",
+											AdditionalPropertyData = new List<AdditionalPropertyData>
+											{
+												new AdditionalPropertyData
+												{
+													Type = AdditionalPropertyDataType.Attribute,
+													Name ="color",
+													Value = "green",
+												}
+											},
+											DataProperties = new List<DataProperty>
+											{
+												new DataProperty
+												{
+													PropertyTarget = "",
+													PropertySource = "epsilon",
+													AdditionalPropertyData = new List<AdditionalPropertyData>
+													{
+														new AdditionalPropertyData
+														{
+															Type = AdditionalPropertyDataType.Attribute,
+															Name ="color",
+															Value = "lime",
+														}
+													}
+												}
+											}
+										},
+										new DataProperty
+										{
+											PropertyTarget = "Zeta",
+											PropertySource = "zetas",
+											AdditionalPropertyData = new List<AdditionalPropertyData>
+											{
+												new AdditionalPropertyData
+												{
+													Type = AdditionalPropertyDataType.Attribute,
+													Name ="color",
+													Value = "black",
+												}
+											},
+											DataProperties = new List<DataProperty>
+											{
+												new DataProperty
+												{
+													PropertyTarget = "Zeta",
+													PropertySource = "zeta",
+													AdditionalPropertyData = new List<AdditionalPropertyData>
+													{
+														new AdditionalPropertyData
+														{
+															Type = AdditionalPropertyDataType.Attribute,
+															Name ="color",
+															Value = "white",
+														}
+													},
+													DataProperties = new List<DataProperty>
+													{
+														new DataProperty
+														{
+															PropertyTarget = "Eta",
+															PropertySource = "eta",
+															AdditionalPropertyData = new List<AdditionalPropertyData>
+															{
+																new AdditionalPropertyData
+																{
+																	Type = AdditionalPropertyDataType.Attribute,
+																	Name ="color",
+																	Value = "crimson",
+																}
+															}
+														},
+														new DataProperty
+														{
+															PropertyTarget = "Theta",
+															PropertySource = "theta",
+															AdditionalPropertyData = new List<AdditionalPropertyData>
+															{
+																new AdditionalPropertyData
+																{
+																	Type = AdditionalPropertyDataType.Attribute,
+																	Name ="color",
+																	Value = "gray",
+																}
+															}
+
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+
+					}
+				}
+			};
+
+			var expectedResult = new StringBuilder();
+			expectedResult.Append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>");
+			expectedResult.Append("<alpha color=\"red\">");
+			expectedResult.Append("<beta color=\"purple\">One</beta>");
+			expectedResult.Append("<gamma color=\"orange\"><delta color=\"yellow\">Two</delta></gamma>");
+			expectedResult.Append("<epsilons color=\"green\">");
+			expectedResult.Append("<epsilon color=\"lime\">Three</epsilon>");
+			expectedResult.Append("<epsilon color=\"lime\">Four</epsilon>");
+			expectedResult.Append("</epsilons>");
+			expectedResult.Append("<zetas color=\"black\">");
+			expectedResult.Append("<zeta color=\"white\"><eta color=\"crimson\">Five</eta><theta color=\"gray\">Six</theta></zeta>");
+			expectedResult.Append("<zeta color=\"white\"><eta color=\"crimson\">Seven</eta><theta color=\"gray\">Eight</theta></zeta>");
+			expectedResult.Append("</zetas>");
+			expectedResult.Append("</alpha>");
+
+			// Act
+			var result = _classUnderTest.Convert(configuration.DataProperty, new List<object> { alpha }).ToList();
+
+			// Assert
+			result.Should().HaveCount(1);
+			result.Single().Should().Be(expectedResult.ToString());
+		}
+
+		[TestMethod]
+		public void ImportEnumerableWithPrimitiveDataType()
+		{
+			// Arrange
+			var configuration = new ConfigurationData
+			{
+				DataFormat = ContentFormat.Xml,
+				DataProperty = new DataProperty
+				{
+					PropertySource = "alpha",
+					DataProperties = new List<DataProperty>
+					{
+						new DataProperty
+						{
+							DataProperties = new List<DataProperty>
+							{
+								new DataProperty
+								{
+									PropertySource = "alpha",
+									DataProperties = new List<DataProperty>
+									{
+										new DataProperty
+										{
+											PropertyTarget = "Epsilon",
+											PropertySource = "epsilons",
+											DataProperties = new List<DataProperty>
+											{
+												new DataProperty
+												{
+													PropertyTarget = "Epsilon",
+													PropertySource = "epsilon"
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+
+					}
+				}
+			};
+
+			var xmlData = new StringBuilder();
+			xmlData.Append("<alpha>");
+			xmlData.Append("<beta>One</beta>");
+			xmlData.Append("<gamma><delta>Two</delta></gamma>");
+			xmlData.Append("<epsilons>");
+			xmlData.Append("<epsilon>Three</epsilon>");
+			xmlData.Append("<epsilon>Four</epsilon>");
+			xmlData.Append("</epsilons>");
+			xmlData.Append("<zetas>");
+			xmlData.Append("<zeta><eta>Five</eta><theta>Six</theta></zeta>");
+			xmlData.Append("<zeta><eta>Seven</eta><theta>Eight</theta></zeta>");
+			xmlData.Append("</zetas>");
+			xmlData.Append("</alpha>");
+
+			var expectedResult = new AdditionalPropertyDataRoot
+			{
+				Epsilon = new List<string>
+				{
+					"Three",
+					"Four"
+				}
+			};
+
+			// Act
+			var result = _classUnderTest.Convert<AdditionalPropertyDataRoot>(configuration.DataProperty, xmlData.ToString()).ToList();
+
+			// Assert
+			result.Should().HaveCount(1);
+			result.Single().Epsilon.Should().HaveCount(2);
+			result.Single().Epsilon.First().Should().Be(expectedResult.Epsilon.First());
+			result.Single().Epsilon.Last().Should().Be(expectedResult.Epsilon.Last());
+		}
+
+		[TestMethod]
+		public void ExportWithConfiguredAttributes()
+		{
+			// Arrange
+			var alpha = new AdditionalPropertyDataRoot
+			{
+				Beta = "One",
+				AttributeRoot = "red",
+				AttributeBeta = "purple",
+				AttributeGamma = "orange",
+				AttributeEpsilons = "green",
+				AttributeEpsilon = "lime",
+				AttributeZetas = "black",
+				AttributeZeta = "white",
+				Gamma = new AdditionalPropertyDataOne
+				{
+					Delta = "Two",
+					AttributeDelta = "yellow",
+				},
+				Epsilon = new List<string>
+				{
+					"Three",
+					"Four"
+				},
+				Zeta = new List<AdditionalPropertyDataTwo>
+				{
+					new AdditionalPropertyDataTwo
+					{
+						Eta = "Five",
+						Theta = "Six",
+						AttributeEta = "crimson",
+						AttributeTheta = "gray",
+					},
+					new AdditionalPropertyDataTwo
+					{
+						Eta = "Seven",
+						Theta = "Eight",
+						AttributeEta = "crimson-light",
+						AttributeTheta = "gray-light",
+					}
+				}
+			};
+
+			var configuration = new ConfigurationData
+			{
+				DataFormat = ContentFormat.Xml,
+				DataProperty = new DataProperty
+				{
+					PropertySource = "alpha",
+					DataProperties = new List<DataProperty>
+					{
+						new DataProperty
+						{
+							DataProperties = new List<DataProperty>
+							{
+								new DataProperty
+								{
+									PropertySource = "alpha",
+									DataProperties = new List<DataProperty>
+									{
+										new DataProperty
+										{
+											IsAttribute = true,
+											PropertyTarget = "AttributeRoot",
+											PropertySource = "color"
+										},
+										new DataProperty
+										{
+											PropertyTarget = "Beta",
+											PropertySource = "beta",
+											DataProperties = new List<DataProperty>
+											{
+												new DataProperty
+												{
+													IsAttribute = true,
+													PropertyTarget = "AttributeBeta",
+													PropertySource = "color"
+												}
+											}
+										},
+										new DataProperty
+										{
+											PropertyTarget = "Gamma",
+											PropertySource = "gamma",
+											DataProperties = new List<DataProperty>
+											{
+												new DataProperty
+												{
+													PropertyTarget = "Delta",
+													PropertySource = "delta",
+													DataProperties = new List<DataProperty>
+													{
+														new DataProperty
+														{
+															IsAttribute = true,
+															PropertyTarget = "AttributeDelta",
+															PropertySource = "color"
+														}
+													}
+												},
+												new DataProperty
+												{
+													IsAttribute = true,
+													PropertyTarget = "AttributeGamma",
+													PropertySource = "color"
+												}
+											}
+										},
+										new DataProperty
+										{
+											PropertyTarget = "Epsilon",
+											PropertySource = "epsilons",
+											DataProperties = new List<DataProperty>
+											{
+												new DataProperty
+												{
+													PropertyTarget = "",
+													PropertySource = "epsilon",
+													DataProperties = new List<DataProperty>
+													{
+														new DataProperty
+														{
+															IsAttribute = true,
+															PropertyTarget = "AttributeEpsilon",
+															PropertySource = "color"
+														}
+													}
+												},
+												new DataProperty
+												{
+													IsAttribute = true,
+													PropertyTarget = "AttributeEpsilons",
+													PropertySource = "color"
+												}
+											}
+										},
+										new DataProperty
+										{
+											PropertyTarget = "Zeta",
+											PropertySource = "zetas",
+											DataProperties = new List<DataProperty>
+											{
+												new DataProperty
+												{
+													PropertyTarget = "Zeta",
+													PropertySource = "zeta",
+													DataProperties = new List<DataProperty>
+													{
+														new DataProperty
+														{
+															PropertyTarget = "Eta",
+															PropertySource = "eta",
+															DataProperties = new List<DataProperty>
+															{
+																new DataProperty
+																{
+																	IsAttribute = true,
+																	PropertyTarget = "AttributeEta",
+																	PropertySource = "color"
+																}
+															}
+														},
+														new DataProperty
+														{
+															PropertyTarget = "Theta",
+															PropertySource = "theta",
+															DataProperties = new List<DataProperty>
+															{
+																new DataProperty
+																{
+																	IsAttribute = true,
+																	PropertyTarget = "AttributeTheta",
+																	PropertySource = "color"
+																}
+															}
+
+														},
+														new DataProperty
+														{
+															IsAttribute = true,
+															PropertyTarget = "AttributeZeta",
+															PropertySource = "color"
+														}
+													}
+												},
+												new DataProperty
+												{
+													IsAttribute = true,
+													PropertyTarget = "AttributeZetas",
+													PropertySource = "color"
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+
+					}
+				}
+			};
+
+			var expectedResult = new StringBuilder();
+			expectedResult.Append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>");
+			expectedResult.Append("<alpha color=\"red\">");
+			expectedResult.Append("<beta color=\"purple\">One</beta>");
+			expectedResult.Append("<gamma color=\"orange\"><delta color=\"yellow\">Two</delta></gamma>");
+			expectedResult.Append("<epsilons color=\"green\">");
+			expectedResult.Append("<epsilon color=\"lime\">Three</epsilon>");
+			expectedResult.Append("<epsilon color=\"lime\">Four</epsilon>");
+			expectedResult.Append("</epsilons>");
+			expectedResult.Append("<zetas color=\"black\">");
+			expectedResult.Append("<zeta color=\"white\"><eta color=\"crimson\">Five</eta><theta color=\"gray\">Six</theta></zeta>");
+			expectedResult.Append("<zeta color=\"white\"><eta color=\"crimson-light\">Seven</eta><theta color=\"gray-light\">Eight</theta></zeta>");
+			expectedResult.Append("</zetas>");
+			expectedResult.Append("</alpha>");
+
+			// Act
+			var result = _classUnderTest.Convert(configuration.DataProperty, new List<object> { alpha }).ToList();
+
+			// Assert
+			result.Should().HaveCount(1);
+			result.Single().Should().Be(expectedResult.ToString());
+		}
+
+		[TestMethod]
+		public void ImportWithConfiguredAttributes()
+		{
+			// Arrange
+			var expectedResult = new AdditionalPropertyDataRoot
+			{
+				Beta = "One",
+				AttributeRoot = "red",
+				AttributeBeta = "purple",
+				AttributeGamma = "orange",
+				AttributeEpsilons = "green",
+				AttributeEpsilon = "lime",
+				AttributeZetas = "black",
+				AttributeZeta = "white",
+				Gamma = new AdditionalPropertyDataOne
+				{
+					Delta = "Two",
+					AttributeDelta = "yellow",
+				},
+				Epsilon = new List<string>
+				{
+					"Three",
+					"Four"
+				},
+				Zeta = new List<AdditionalPropertyDataTwo>
+				{
+					new AdditionalPropertyDataTwo
+					{
+						Eta = "Five",
+						Theta = "Six",
+						AttributeEta = "crimson",
+						AttributeTheta = "gray",
+					},
+					new AdditionalPropertyDataTwo
+					{
+						Eta = "Seven",
+						Theta = "Eight",
+						AttributeEta = "crimson-light",
+						AttributeTheta = "gray-light",
+					}
+				}
+			};
+
+			var configuration = new ConfigurationData
+			{
+				DataFormat = ContentFormat.Xml,
+				DataProperty = new DataProperty
+				{
+					PropertySource = "alpha",
+					DataProperties = new List<DataProperty>
+					{
+						new DataProperty
+						{
+							DataProperties = new List<DataProperty>
+							{
+								new DataProperty
+								{
+									PropertySource = "alpha",
+									DataProperties = new List<DataProperty>
+									{
+										new DataProperty
+										{
+											IsAttribute = true,
+											PropertyTarget = "AttributeRoot",
+											PropertySource = "color"
+										},
+										new DataProperty
+										{
+											PropertyTarget = "Beta",
+											PropertySource = "beta",
+											DataProperties = new List<DataProperty>
+											{
+												new DataProperty
+												{
+													IsAttribute = true,
+													PropertyTarget = "AttributeBeta",
+													PropertySource = "color"
+												}
+											}
+										},
+										new DataProperty
+										{
+											PropertyTarget = "Gamma",
+											PropertySource = "gamma",
+											DataProperties = new List<DataProperty>
+											{
+												new DataProperty
+												{
+													PropertyTarget = "Delta",
+													PropertySource = "delta",
+													DataProperties = new List<DataProperty>
+													{
+														new DataProperty
+														{
+															IsAttribute = true,
+															PropertyTarget = "AttributeDelta",
+															PropertySource = "color"
+														}
+													}
+												},
+												new DataProperty
+												{
+													IsAttribute = true,
+													PropertyTarget = "AttributeGamma",
+													PropertySource = "color"
+												}
+											}
+										},
+										new DataProperty
+										{
+											PropertyTarget = "Epsilon",
+											PropertySource = "epsilons",
+											DataProperties = new List<DataProperty>
+											{
+												new DataProperty
+												{
+													PropertyTarget = "",
+													PropertySource = "epsilon",
+													DataProperties = new List<DataProperty>
+													{
+														new DataProperty
+														{
+															IsAttribute = true,
+															PropertyTarget = "AttributeEpsilon",
+															PropertySource = "color"
+														}
+													}
+												},
+												new DataProperty
+												{
+													IsAttribute = true,
+													PropertyTarget = "AttributeEpsilons",
+													PropertySource = "color"
+												}
+											}
+										},
+										new DataProperty
+										{
+											PropertyTarget = "Zeta",
+											PropertySource = "zetas",
+											DataProperties = new List<DataProperty>
+											{
+												new DataProperty
+												{
+													PropertyTarget = "Zeta",
+													PropertySource = "zeta",
+													DataProperties = new List<DataProperty>
+													{
+														new DataProperty
+														{
+															PropertyTarget = "Eta",
+															PropertySource = "eta",
+															DataProperties = new List<DataProperty>
+															{
+																new DataProperty
+																{
+																	IsAttribute = true,
+																	PropertyTarget = "AttributeEta",
+																	PropertySource = "color"
+																}
+															}
+														},
+														new DataProperty
+														{
+															PropertyTarget = "Theta",
+															PropertySource = "theta",
+															DataProperties = new List<DataProperty>
+															{
+																new DataProperty
+																{
+																	IsAttribute = true,
+																	PropertyTarget = "AttributeTheta",
+																	PropertySource = "color"
+																}
+															}
+
+														},
+														new DataProperty
+														{
+															IsAttribute = true,
+															PropertyTarget = "AttributeZeta",
+															PropertySource = "color"
+														}
+													}
+												},
+												new DataProperty
+												{
+													IsAttribute = true,
+													PropertyTarget = "AttributeZetas",
+													PropertySource = "color"
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+
+					}
+				}
+			};
+
+			var xmlData = new StringBuilder();
+			xmlData.Append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>");
+			xmlData.Append("<alpha color=\"red\">");
+			xmlData.Append("<beta color=\"purple\">One</beta>");
+			xmlData.Append("<gamma color=\"orange\"><delta color=\"yellow\">Two</delta></gamma>");
+			xmlData.Append("<epsilons color=\"green\">");
+			xmlData.Append("<epsilon color=\"lime\">Three</epsilon>");
+			xmlData.Append("<epsilon color=\"lime\">Four</epsilon>");
+			xmlData.Append("</epsilons>");
+			xmlData.Append("<zetas color=\"black\">");
+			xmlData.Append("<zeta color=\"white\"><eta color=\"crimson\">Five</eta><theta color=\"gray\">Six</theta></zeta>");
+			xmlData.Append("<zeta color=\"white\"><eta color=\"crimson-light\">Seven</eta><theta color=\"gray-light\">Eight</theta></zeta>");
+			xmlData.Append("</zetas>");
+			xmlData.Append("</alpha>");
+
+			// Act
+			var result = _classUnderTest.Convert<AdditionalPropertyDataRoot>(configuration.DataProperty, xmlData.ToString()).ToList();
+
+			// Assert
+			result.Should().HaveCount(1);
+			var resultItem = result.Single();
+			resultItem.Should().BeEquivalentTo(expectedResult);
+		}
+
+		[TestMethod]
+		public void ExportCDataTest()
+		{
+			// Arrange
+			var alpha = new AdditionalPropertyDataRoot
+			{
+				Beta = "One",
+				Gamma = new AdditionalPropertyDataOne
+				{
+					Delta = "Two"
+				},
+				Epsilon = new List<string>
+				{
+					"Three",
+					"Four"
+				},
+				Zeta = new List<AdditionalPropertyDataTwo>
+				{
+					new AdditionalPropertyDataTwo
+					{
+						Eta = "Five",
+						Theta = "Six"
+					},
+					new AdditionalPropertyDataTwo
+					{
+						Eta = "Seven",
+						Theta = "Eight"
+					}
+				}
+			};
+
+			var configuration = new ConfigurationData
+			{
+				DataFormat = ContentFormat.Xml,
+				DataProperty = new DataProperty
+				{
+					PropertySource = "alpha",
+					DataProperties = new List<DataProperty>
+					{
+						new DataProperty
+						{
+							DataProperties = new List<DataProperty>
+							{
+								new DataProperty
+								{
+									PropertySource = "alpha",
+									DataProperties = new List<DataProperty>
+									{
+										new DataProperty
+										{
+											PropertyTarget = "Beta",
+											PropertySource = "beta",
+											SurroundWithCData = true
+										},
+										new DataProperty
+										{
+											PropertyTarget = "Gamma",
+											PropertySource = "gamma",
+											DataProperties = new List<DataProperty>
+											{
+												new DataProperty
+												{
+													PropertyTarget = "Delta",
+													PropertySource = "delta",
+													SurroundWithCData = true
+												}
+											}
+										},
+										new DataProperty
+										{
+											PropertyTarget = "Epsilon",
+											PropertySource = "epsilons",
+											DataProperties = new List<DataProperty>
+											{
+												new DataProperty
+												{
+													PropertyTarget = "",
+													PropertySource = "epsilon"
+												}
+											}
+										},
+										new DataProperty
+										{
+											PropertyTarget = "Zeta",
+											PropertySource = "zetas",
+											DataProperties = new List<DataProperty>
+											{
+												new DataProperty
+												{
+													PropertyTarget = "Zeta",
+													PropertySource = "zeta",
+													DataProperties = new List<DataProperty>
+													{
+														new DataProperty
+														{
+															PropertyTarget = "Eta",
+															PropertySource = "eta",
+															SurroundWithCData = true
+														},
+														new DataProperty
+														{
+															PropertyTarget = "Theta",
+															PropertySource = "theta",
+															SurroundWithCData = true
+
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+
+					}
+				}
+			};
+
+			var expectedResult = new StringBuilder();
+			expectedResult.Append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>");
+			expectedResult.Append("<alpha>");
+			expectedResult.Append("<beta><![CDATA[One]]></beta>");
+			expectedResult.Append("<gamma><delta><![CDATA[Two]]></delta></gamma>");
+			expectedResult.Append("<epsilons>");
+			expectedResult.Append("<epsilon>Three</epsilon>");
+			expectedResult.Append("<epsilon>Four</epsilon>");
+			expectedResult.Append("</epsilons>");
+			expectedResult.Append("<zetas>");
+			expectedResult.Append("<zeta><eta><![CDATA[Five]]></eta><theta><![CDATA[Six]]></theta></zeta>");
+			expectedResult.Append("<zeta><eta><![CDATA[Seven]]></eta><theta><![CDATA[Eight]]></theta></zeta>");
+			expectedResult.Append("</zetas>");
+			expectedResult.Append("</alpha>");
+
+			// Act
+			var result = _classUnderTest.Convert(configuration.DataProperty, new List<object> { alpha }).ToList();
+
+			// Assert
+			result.Should().HaveCount(1);
+			result.Single().Should().Be(expectedResult.ToString());
+		}
+
+		[TestMethod]
+		public void ImportCDataTest()
+		{
+			// Arrange
+			var expectedResult = new AdditionalPropertyDataRoot
+			{
+				Beta = "One",
+				Gamma = new AdditionalPropertyDataOne
+				{
+					Delta = "Two",
+				},
+				Epsilon = new List<string>
+				{
+					"Three",
+					"Four"
+				},
+				Zeta = new List<AdditionalPropertyDataTwo>
+				{
+					new AdditionalPropertyDataTwo
+					{
+						Eta = "Five",
+						Theta = "Six",
+					},
+					new AdditionalPropertyDataTwo
+					{
+						Eta = "Seven",
+						Theta = "Eight",
+					}
+				}
+			};
+
+			var configuration = new ConfigurationData
+			{
+				DataFormat = ContentFormat.Xml,
+				DataProperty = new DataProperty
+				{
+					PropertySource = "alpha",
+					DataProperties = new List<DataProperty>
+					{
+						new DataProperty
+						{
+							DataProperties = new List<DataProperty>
+							{
+								new DataProperty
+								{
+									PropertySource = "alpha",
+									DataProperties = new List<DataProperty>
+									{
+										new DataProperty
+										{
+											PropertyTarget = "Beta",
+											PropertySource = "beta"
+										},
+										new DataProperty
+										{
+											PropertyTarget = "Gamma",
+											PropertySource = "gamma",
+											DataProperties = new List<DataProperty>
+											{
+												new DataProperty
+												{
+													PropertyTarget = "Delta",
+													PropertySource = "delta"
+												}
+											}
+										},
+										new DataProperty
+										{
+											PropertyTarget = "Epsilon",
+											PropertySource = "epsilons",
+											DataProperties = new List<DataProperty>
+											{
+												new DataProperty
+												{
+													PropertyTarget = "",
+													PropertySource = "epsilon"
+												}
+											}
+										},
+										new DataProperty
+										{
+											PropertyTarget = "Zeta",
+											PropertySource = "zetas",
+											DataProperties = new List<DataProperty>
+											{
+												new DataProperty
+												{
+													PropertyTarget = "Zeta",
+													PropertySource = "zeta",
+													DataProperties = new List<DataProperty>
+													{
+														new DataProperty
+														{
+															PropertyTarget = "Eta",
+															PropertySource = "eta"
+														},
+														new DataProperty
+														{
+															PropertyTarget = "Theta",
+															PropertySource = "theta"
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+
+					}
+				}
+			};
+
+			var xmlData = new StringBuilder();
+			xmlData.Append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>");
+			xmlData.Append("<alpha>");
+			xmlData.Append("<beta><![CDATA[One]]></beta>");
+			xmlData.Append("<gamma><delta><![CDATA[Two]]></delta></gamma>");
+			xmlData.Append("<epsilons>");
+			xmlData.Append("<epsilon>Three</epsilon>");
+			xmlData.Append("<epsilon>Four</epsilon>");
+			xmlData.Append("</epsilons>");
+			xmlData.Append("<zetas>");
+			xmlData.Append("<zeta><eta><![CDATA[Five]]></eta><theta><![CDATA[Six]]></theta></zeta>");
+			xmlData.Append("<zeta><eta><![CDATA[Seven]]></eta><theta><![CDATA[Eight]]></theta></zeta>");
+			xmlData.Append("</zetas>");
+			xmlData.Append("</alpha>");
+
+			// Act
+			var result = _classUnderTest.Convert<AdditionalPropertyDataRoot>(configuration.DataProperty, xmlData.ToString()).ToList();
+
+			// Assert
+			result.Should().HaveCount(1);
+			var resultItem = result.Single();
+			resultItem.Should().BeEquivalentTo(expectedResult);
 		}
 	}
 }
