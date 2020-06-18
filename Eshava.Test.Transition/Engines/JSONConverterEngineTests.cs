@@ -922,5 +922,198 @@ namespace Eshava.Test.Transition.Engines
 			result.Should().HaveCount(1);
 			result.Single().Replace(" ", "").Replace("\r", "").Replace("\n", "").Should().Be(data);
 		}
+
+		[TestMethod]
+		public void ExportEnumerableWithPrimitiveDataType()
+		{
+			// Arrange
+			var alpha = new AdditionalPropertyDataRoot
+			{
+				Beta = "One",
+				Gamma = new AdditionalPropertyDataOne
+				{
+					Delta = "Two"
+				},
+				Epsilon = new List<string>
+				{
+					"Three",
+					"Four"
+				},
+				Zeta = new List<AdditionalPropertyDataTwo>
+				{
+					new AdditionalPropertyDataTwo
+					{
+						Eta = "Five",
+						Theta = "Six"
+					},
+					new AdditionalPropertyDataTwo
+					{
+						Eta = "Seven",
+						Theta = "Eight"
+					}
+				}
+			};
+
+			var configuration = new ConfigurationData
+			{
+				DataFormat = ContentFormat.Json,
+				DataProperty = new DataProperty
+				{
+					SplitExportResult = true,
+					PropertySource = null,
+					DataProperties = new List<DataProperty>
+					{
+						new DataProperty 
+						{
+							PropertyTarget = "Beta",
+							PropertySource = "betaJson"
+						},
+						new DataProperty 
+						{
+							PropertyTarget = "Epsilon",
+							PropertySource = "epsilonJson"
+						},
+						new DataProperty {
+							PropertyTarget = "Zeta",
+							PropertySource = "zetaJson",
+							DataProperties = new List<DataProperty>
+							{
+								new DataProperty
+								{
+									PropertyTarget = "Eta",
+									PropertySource = "etaJson",
+								},
+								new DataProperty
+								{
+									PropertyTarget = "Theta",
+									PropertySource = "thetaJson",
+								}
+							}
+						}
+					}
+				}
+			};
+
+			var expectedResult = new StringBuilder();
+			expectedResult.AppendLine("{");
+			expectedResult.AppendLine("  \"betaJson\": \"One\",");
+			expectedResult.AppendLine("  \"epsilonJson\": [");
+			expectedResult.AppendLine("    \"Three\",");
+			expectedResult.AppendLine("    \"Four\"");
+			expectedResult.AppendLine("  ],");
+			expectedResult.AppendLine("  \"zetaJson\": [");
+			expectedResult.AppendLine("    {");
+			expectedResult.AppendLine("      \"etaJson\": \"Five\",");
+			expectedResult.AppendLine("      \"thetaJson\": \"Six\"");
+			expectedResult.AppendLine("    },");
+			expectedResult.AppendLine("    {");
+			expectedResult.AppendLine("      \"etaJson\": \"Seven\",");
+			expectedResult.AppendLine("      \"thetaJson\": \"Eight\"");
+			expectedResult.AppendLine("    }");
+			expectedResult.AppendLine("  ]");
+			expectedResult.Append("}");
+
+			// Act
+			var result = _classUnderTest.Convert(configuration.DataProperty, new List<AdditionalPropertyDataRoot> { alpha }).ToList();
+
+			// Assert
+			result.Should().HaveCount(1);
+			result.Single().Should().Be(expectedResult.ToString());
+		}
+
+		[TestMethod]
+		public void ImportEnumerableWithPrimitiveDataType()
+		{
+			// Arrange
+			var expectedResult = new AdditionalPropertyDataRoot
+			{
+				Beta = "One",
+				Epsilon = new List<string>
+				{
+					"Three",
+					"Four"
+				},
+				Zeta = new List<AdditionalPropertyDataTwo>
+				{
+					new AdditionalPropertyDataTwo
+					{
+						Eta = "Five",
+						Theta = "Six"
+					},
+					new AdditionalPropertyDataTwo
+					{
+						Eta = "Seven",
+						Theta = "Eight"
+					}
+				}
+			};
+
+			var configuration = new ConfigurationData
+			{
+				DataFormat = ContentFormat.Json,
+				DataProperty = new DataProperty
+				{
+					SplitExportResult = true,
+					PropertySource = null,
+					DataProperties = new List<DataProperty>
+					{
+						new DataProperty
+						{
+							PropertyTarget = "Beta",
+							PropertySource = "betaJson"
+						},
+						new DataProperty
+						{
+							PropertyTarget = "Epsilon",
+							PropertySource = "epsilonJson"
+						},
+						new DataProperty {
+							PropertyTarget = "Zeta",
+							PropertySource = "zetaJson",
+							DataProperties = new List<DataProperty>
+							{
+								new DataProperty
+								{
+									PropertyTarget = "Eta",
+									PropertySource = "etaJson",
+								},
+								new DataProperty
+								{
+									PropertyTarget = "Theta",
+									PropertySource = "thetaJson",
+								}
+							}
+						}
+					}
+				}
+			};
+
+			var jsonData = new StringBuilder();
+			jsonData.AppendLine("{");
+			jsonData.AppendLine("  \"betaJson\": \"One\",");
+			jsonData.AppendLine("  \"epsilonJson\": [");
+			jsonData.AppendLine("    \"Three\",");
+			jsonData.AppendLine("    \"Four\"");
+			jsonData.AppendLine("  ],");
+			jsonData.AppendLine("  \"zetaJson\": [");
+			jsonData.AppendLine("    {");
+			jsonData.AppendLine("      \"etaJson\": \"Five\",");
+			jsonData.AppendLine("      \"thetaJson\": \"Six\"");
+			jsonData.AppendLine("    },");
+			jsonData.AppendLine("    {");
+			jsonData.AppendLine("      \"etaJson\": \"Seven\",");
+			jsonData.AppendLine("      \"thetaJson\": \"Eight\"");
+			jsonData.AppendLine("    }");
+			jsonData.AppendLine("  ]");
+			jsonData.Append("}");
+
+			// Act
+			var result = _classUnderTest.Convert<AdditionalPropertyDataRoot>(configuration.DataProperty, jsonData.ToString()).ToList();
+
+			// Assert
+			result.Should().HaveCount(1);
+			var resultItem = result.Single();
+			resultItem.Should().BeEquivalentTo(expectedResult);
+		}
 	}
 }

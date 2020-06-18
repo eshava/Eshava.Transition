@@ -441,47 +441,48 @@ namespace Eshava.Transition.Engines
 		private XmlNode ProcessEnumerableDataProperty(XMLSettings settings)
 		{
 			var result = settings.Document.CreateNode(XmlNodeType.Element, settings.DataProperty.PropertySource, null);
-			var dataRecordEnumerableRaw = settings.PropertyInfo.GetValue(settings.DataRecord);
-			var dataRecordEnumerable = dataRecordEnumerableRaw as System.Collections.IEnumerable;
+			var dataRecordEnumerable = settings.PropertyInfo.GetValue(settings.DataRecord) as System.Collections.IEnumerable;
 
-			if (dataRecordEnumerable != null)
+			if (dataRecordEnumerable == null)
 			{
-				var subItemType = settings.PropertyInfo.PropertyType.GetDataTypeFromIEnumerable();
+				return null;
+			}
 
-				foreach (var subItem in dataRecordEnumerable)
+			var subItemType = settings.PropertyInfo.PropertyType.GetDataTypeFromIEnumerable();
+
+			foreach (var subItem in dataRecordEnumerable)
+			{
+				if (CheckIfClass(subItemType))
 				{
-					if (CheckIfClass(subItemType))
+					var resultItemSettings = new XMLSettings { DataRecord = subItem, DataProperty = settings.DataProperty.DataProperties.First(), Document = settings.Document, CultureInfo = settings.CultureInfo };
+					var resultItem = ProcessDataRecord(resultItemSettings);
+					if (resultItem != null)
 					{
-						var resultItemSettings = new XMLSettings { DataRecord = subItem, DataProperty = settings.DataProperty.DataProperties.First(), Document = settings.Document, CultureInfo = settings.CultureInfo };
-						var resultItem = ProcessDataRecord(resultItemSettings);
-						if (resultItem != null)
-						{
-							result.AppendChild(resultItem);
-							resultItemSettings.DataRecord = settings.DataRecord;
-							resultItemSettings.PropertyInfos = settings.PropertyInfos;
-							ProcessDataPropertyAttributes(resultItemSettings, resultItem);
-						}
+						result.AppendChild(resultItem);
+						resultItemSettings.DataRecord = settings.DataRecord;
+						resultItemSettings.PropertyInfos = settings.PropertyInfos;
+						ProcessDataPropertyAttributes(resultItemSettings, resultItem);
 					}
-					else
+				}
+				else
+				{
+					var subSettings = new XMLSettings
 					{
-						var subSettings = new XMLSettings
-						{
-							Document = settings.Document,
-							DataProperty = settings.DataProperty.DataProperties.First(),
-							PropertyInfo = settings.PropertyInfo,
-							PropertyInfos = null,
-							DataRecord = subItem,
-							RawDataNode = result,
-							CultureInfo = settings.CultureInfo
-						};
+						Document = settings.Document,
+						DataProperty = settings.DataProperty.DataProperties.First(),
+						PropertyInfo = settings.PropertyInfo,
+						PropertyInfos = null,
+						DataRecord = subItem,
+						RawDataNode = result,
+						CultureInfo = settings.CultureInfo
+					};
 
-						var rawValue = GetRawValue(subItemType, subItem, settings.CultureInfo);
-						var childNode = ProcessPrimitiveDataProperty(subSettings, rawValue);
-						if (childNode != null)
-						{
-							subSettings.DataRecord = settings.DataRecord;
-							ProcessDataRecordProperty(subSettings, settings.PropertyInfos, childNode);
-						}
+					var rawValue = GetRawValue(subItemType, subItem, settings.CultureInfo);
+					var childNode = ProcessPrimitiveDataProperty(subSettings, rawValue);
+					if (childNode != null)
+					{
+						subSettings.DataRecord = settings.DataRecord;
+						ProcessDataRecordProperty(subSettings, settings.PropertyInfos, childNode);
 					}
 				}
 			}
