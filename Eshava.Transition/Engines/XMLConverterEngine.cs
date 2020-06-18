@@ -67,7 +67,9 @@ namespace Eshava.Transition.Engines
 			}
 			else
 			{
-				var rawData = settings.RawDataNode.SelectNodes(settings.DataProperty.PropertySource);
+				var rawData = settings.RawDataNode.Name.ToLower() == settings.DataProperty.PropertySource.ToLower()
+					? settings.RawDataNode.ParentNode.SelectNodes(settings.DataProperty.PropertySource)
+					: settings.RawDataNode.SelectNodes(settings.DataProperty.PropertySource);
 				foreach (XmlNode rawDataNode in rawData)
 				{
 					dataRecords.Add(ProcessDataProperty(settings, rawDataNode));
@@ -90,6 +92,7 @@ namespace Eshava.Transition.Engines
 			if (isClass)
 			{
 				ProcessXmlNode(settings.DataProperty.DataProperties, rawDataNode, nodeSettings);
+				ProcessXmlAttributes(settings, rawDataNode);
 
 				return nodeSettings.DataRecord;
 			}
@@ -98,13 +101,42 @@ namespace Eshava.Transition.Engines
 			nodeSettings.RawDataNode = rawDataNode;
 			nodeSettings.DataProperty = settings.DataProperty;
 			ProcessPrimitiveDataTypeProperty(nodeSettings, (s, rawValue) => { value = System.Convert.ChangeType(rawValue, s.DataType, s.CultureInfo); });
+			ProcessXmlAttributes(settings, rawDataNode);
 
 			return value;
 		}
 
+		private void ProcessXmlAttributes(XMLSettings settings, XmlNode rawDataNode)
+		{
+			var attributeDataProperties = settings.DataProperty.DataProperties
+				?.Where(d => d.IsAttribute) 
+				?? Array.Empty<DataProperty>();
+			
+			if (!attributeDataProperties.Any())
+			{
+				return;
+			}
+
+			var attributeSettings = new XMLSettings
+			{
+				DataRecord = settings.DataRecord,
+				PropertyInfos = settings.DataRecord?.GetType().GetProperties(),
+				CultureInfo = settings.CultureInfo
+			};
+
+			foreach (var dataProperty in attributeDataProperties)
+			{
+				var attribute = rawDataNode.Attributes[dataProperty.PropertySource];
+				attributeSettings.DataProperty = dataProperty;
+				attributeSettings.PropertyInfo = attributeSettings.PropertyInfos.FirstOrDefault(p => p.Name == dataProperty.PropertyTarget);
+
+				ProcessPrimitiveDataTypeProperty(attribute.Value, attributeSettings, (s, rawValue) => SetPropertyValue(s.PropertyInfo, s.DataRecord, rawValue, s.CultureInfo));
+			}
+		}
+
 		private void ProcessXmlNode(IEnumerable<DataProperty> dataProperties, XmlNode rawDataNode, XMLSettings nodeSettings)
 		{
-			foreach (var dataProperty in dataProperties)
+			foreach (var dataProperty in dataProperties.Where(d => !d.IsAttribute))
 			{
 				nodeSettings.DataProperty = dataProperty;
 
@@ -128,7 +160,7 @@ namespace Eshava.Transition.Engines
 						continue;
 					}
 
-					foreach (var dataPropertyChild in dataProperty.DataProperties)
+					foreach (var dataPropertyChild in dataProperty.DataProperties.Where(d => !d.IsAttribute))
 					{
 						var childSettings = new XMLSettings
 						{
@@ -140,12 +172,15 @@ namespace Eshava.Transition.Engines
 						};
 
 						ProcessPropertyInfo(childSettings);
+						ProcessXmlAttributes(childSettings, childSettings.RawDataNode);
 					}
 				}
 				else
 				{
 					ProcessPropertyInfo(nodeSettings);
 				}
+
+				ProcessXmlAttributes(nodeSettings, nodeSettings.RawDataNode);
 			}
 		}
 
@@ -164,6 +199,7 @@ namespace Eshava.Transition.Engines
 				var childSettings = new XMLSettings
 				{
 					DataProperty = dataPropertyChild,
+					DataRecord = settings.DataRecord,
 					RawDataNode = settings.RawDataNode,
 					DataType = settings.PropertyInfo.PropertyType.GetGenericArguments()[0],
 					CultureInfo = settings.CultureInfo
@@ -360,7 +396,7 @@ namespace Eshava.Transition.Engines
 			}
 
 			var rawValue = GetRawValue(settings.DataRecord, settings.PropertyInfo, settings.CultureInfo);
-			
+
 			return ProcessPrimitiveDataProperty(settings, rawValue);
 		}
 

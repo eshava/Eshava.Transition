@@ -55,13 +55,14 @@ namespace Eshava.Transition.Engines
 		{
 			var classSettings = new SettingType
 			{
+				DataRecord = settings.DataRecord,
 				DataType = settings.PropertyInfo.PropertyType,
 				RawDataNode = GetRawDataForClassProperty(settings.RawDataNode),
 				DataProperty = settings.DataProperty
 			};
 
 			var child = ProcessDataProperty(classSettings).FirstOrDefault();
-			if (child != null && !(child as IEmpty).IsEmpty)
+			if (child != null && (!(child is IEmpty) || !(child as IEmpty).IsEmpty))
 			{
 				SetPropertyValue(settings.PropertyInfo, settings.DataRecord, child, settings.CultureInfo);
 			}
@@ -76,6 +77,11 @@ namespace Eshava.Transition.Engines
 		{
 			var rawValue = GetValue(settings.RawDataNode).Trim();
 
+			ProcessPrimitiveDataTypeProperty(rawValue, settings, setPropertyValue);
+		}
+
+		protected void ProcessPrimitiveDataTypeProperty(string rawValue, SettingType settings, Action<SettingType, string> setPropertyValue)
+		{
 			if (rawValue.IsNullOrEmpty())
 			{
 				return;
