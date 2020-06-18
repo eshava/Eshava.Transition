@@ -54,6 +54,7 @@ namespace Eshava.Transition.Models
 		#region xml
 		public IEnumerable<AdditionalPropertyData> AdditionalPropertyData { get; set; }            /* Export */
 		public bool IsAttribute { get; set; }
+		public bool SurroundWithCData { get; set; }					/* Export */
 		#endregion
 	}
 }

@@ -109,9 +109,9 @@ namespace Eshava.Transition.Engines
 		private void ProcessXmlAttributes(XMLSettings settings, XmlNode rawDataNode)
 		{
 			var attributeDataProperties = settings.DataProperty.DataProperties
-				?.Where(d => d.IsAttribute) 
+				?.Where(d => d.IsAttribute)
 				?? Array.Empty<DataProperty>();
-			
+
 			if (!attributeDataProperties.Any())
 			{
 				return;
@@ -413,7 +413,15 @@ namespace Eshava.Transition.Engines
 			if (!rawValue.IsNullOrEmpty())
 			{
 				rawValue = CheckAndApplyMapping(rawValue, settings.DataProperty);
-				propertyNode.InnerText = rawValue;
+				if (settings.DataProperty.SurroundWithCData)
+				{
+					var cdata = settings.Document.CreateCDataSection(rawValue);
+					propertyNode.InnerXml = cdata.OuterXml;
+				}
+				else
+				{
+					propertyNode.InnerText = rawValue;
+				}
 			}
 
 			AddAttributesToNode(settings.Document, propertyNode, additionAttributes);
