@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using System.Xml;
 using Eshava.Core.Extensions;
 using Eshava.Transition.Enums;
@@ -266,7 +267,7 @@ namespace Eshava.Transition.Engines
 
 		private XmlNode ProcessDataRecord(XMLSettings parentSettings)
 		{
-			var propertyInfos = parentSettings.DataRecord.GetType().GetProperties();
+			var propertyInfos = parentSettings.PropertyInfos ?? parentSettings.DataRecord.GetType().GetProperties();
 			var extractFirstChild = false;
 			XmlNode xmlNode;
 			if (parentSettings.DataProperty.PropertySource.IsNullOrEmpty() && parentSettings.RawDataNode == null)
@@ -434,8 +435,22 @@ namespace Eshava.Transition.Engines
 		private XmlNode ProcessClassDataProperty(XMLSettings settings)
 		{
 			var dataRecordClass = settings.PropertyInfo.GetValue(settings.DataRecord);
+			var dataRecordClassProperties = settings.PropertyInfo.PropertyType.GetProperties();
 
-			return ProcessDataRecord(new XMLSettings { DataRecord = dataRecordClass, DataProperty = settings.DataProperty, Document = settings.Document, RawDataNode = settings.RawDataNode, CultureInfo = settings.CultureInfo });
+			if (!CheckConditionalDataProperty(dataRecordClass, settings.DataProperty, dataRecordClassProperties))
+			{
+				return null;
+			}
+
+			return ProcessDataRecord(new XMLSettings
+			{
+				DataRecord = dataRecordClass,
+				DataProperty = settings.DataProperty,
+				Document = settings.Document,
+				RawDataNode = settings.RawDataNode,
+				CultureInfo = settings.CultureInfo,
+				PropertyInfos = dataRecordClassProperties
+			});
 		}
 
 		private XmlNode ProcessEnumerableDataProperty(XMLSettings settings)
@@ -449,12 +464,40 @@ namespace Eshava.Transition.Engines
 			}
 
 			var subItemType = settings.PropertyInfo.PropertyType.GetDataTypeFromIEnumerable();
+			var subItemPropertyInfos = default(PropertyInfo[]);
 
 			foreach (var subItem in dataRecordEnumerable)
 			{
 				if (CheckIfClass(subItemType))
 				{
-					var resultItemSettings = new XMLSettings { DataRecord = subItem, DataProperty = settings.DataProperty.DataProperties.First(), Document = settings.Document, CultureInfo = settings.CultureInfo };
+					if (subItemPropertyInfos == null)
+					{
+						subItemPropertyInfos = subItemType.GetProperties();
+					}
+
+					var subItemDataProperty = settings.DataProperty.DataProperties.FirstOrDefault(d =>
+						   !d.ConditionalPropertyName.IsNullOrEmpty()
+						&& CheckConditionalDataProperty(subItem, d, subItemPropertyInfos));
+
+					if (subItemDataProperty == default(DataProperty))
+					{
+						subItemDataProperty = settings.DataProperty.DataProperties.FirstOrDefault(d => d.ConditionalPropertyName.IsNullOrEmpty());
+					}
+
+					if (subItemDataProperty == default(DataProperty))
+					{
+						continue;
+					}
+
+					var resultItemSettings = new XMLSettings
+					{
+						DataRecord = subItem,
+						DataProperty = subItemDataProperty,
+						Document = settings.Document,
+						CultureInfo = settings.CultureInfo,
+						PropertyInfos = subItemPropertyInfos
+					};
+
 					var resultItem = ProcessDataRecord(resultItemSettings);
 					if (resultItem != null)
 					{
