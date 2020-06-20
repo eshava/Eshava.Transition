@@ -1115,5 +1115,148 @@ namespace Eshava.Test.Transition.Engines
 			var resultItem = result.Single();
 			resultItem.Should().BeEquivalentTo(expectedResult);
 		}
+
+		[TestMethod]
+		public void ExportConditionalMappingExecutionTest()
+		{
+			// Arrange
+			var alpha = new AdditionalPropertyDataRoot
+			{
+				Gamma = new AdditionalPropertyDataOne
+				{
+					Delta = "Two",
+					AttributeDelta = "Second"
+				},
+				Zeta = new List<AdditionalPropertyDataTwo>
+				{
+					new AdditionalPropertyDataTwo
+					{
+						Eta = "Five",
+						Theta = "Six",
+						AttributeEta = "OnlyThis"
+					},
+					new AdditionalPropertyDataTwo
+					{
+						Eta = "Seven",
+						Theta = "Eight",
+						AttributeTheta = "OnlyThis"
+					}
+				}
+			};
+
+			var configuration = new ConfigurationData
+			{
+				DataFormat = ContentFormat.Json,
+				DataProperty = new DataProperty
+				{
+					SplitExportResult = true,
+					PropertySource = null,
+					DataProperties = new List<DataProperty>
+					{
+						new DataProperty
+						{
+							PropertyTarget = "Gamma",
+							PropertySource = "gammaJsonOne",
+							ConditionalPropertyName = "AttributeDelta",
+							ConditionalPropertyValue = "First",
+							DataProperties = new List<DataProperty>
+							{
+								new DataProperty
+								{
+									PropertyTarget = "Delta",
+									PropertySource = "deltaJsonFirst",
+									ConditionalPropertyName = "AttributeDelta",
+									ConditionalPropertyValue = "First"
+								},
+								new DataProperty
+								{
+									PropertyTarget = "Delta",
+									PropertySource = "deltaJsonSecond",
+									ConditionalPropertyName = "AttributeDelta",
+									ConditionalPropertyValue = "Second"
+								}
+							}
+						},
+						new DataProperty
+						{
+							PropertyTarget = "Gamma",
+							PropertySource = "gammaJsonTwo",
+							ConditionalPropertyName = "AttributeDelta",
+							ConditionalPropertyValue = "Second",
+							DataProperties = new List<DataProperty>
+							{
+								new DataProperty
+								{
+									PropertyTarget = "Delta",
+									PropertySource = "deltaJsonFirst",
+									ConditionalPropertyName = "AttributeDelta",
+									ConditionalPropertyValue = "First"
+								},
+								new DataProperty
+								{
+									PropertyTarget = "Delta",
+									PropertySource = "deltaJsonSecond",
+									ConditionalPropertyName = "AttributeDelta",
+									ConditionalPropertyValue = "Second"
+								}
+							}
+						},
+						new DataProperty
+						{
+							PropertyTarget = "Zeta",
+							PropertySource = "zetaJson",
+							ConditionalPropertyName = "AttributeEta",
+							ConditionalPropertyValue = "OnlyThis",
+							DataProperties = new List<DataProperty>
+							{
+								new DataProperty
+								{
+									PropertyTarget = "Eta",
+									PropertySource = "etaJson"
+								}
+							}
+						},
+						new DataProperty
+						{
+							PropertyTarget = "Zeta",
+							PropertySource = "zetaJson",
+							ConditionalPropertyName = "AttributeTheta",
+							ConditionalPropertyValue = "OnlyThis",
+							DataProperties = new List<DataProperty>
+							{
+								new DataProperty
+								{
+									PropertyTarget = "Theta",
+									PropertySource = "thetaJson"
+								}
+							}
+						}
+					}
+				
+				}
+			};
+
+			var expectedResult = new StringBuilder();
+			expectedResult.AppendLine("{");
+			expectedResult.AppendLine("  \"gammaJsonTwo\": {");
+			expectedResult.AppendLine("    \"deltaJsonSecond\": \"Two\"");
+			expectedResult.AppendLine("  },");
+			expectedResult.AppendLine("  \"zetaJson\": [");
+			expectedResult.AppendLine("    {");
+			expectedResult.AppendLine("      \"etaJson\": \"Five\"");
+			expectedResult.AppendLine("    },");
+			expectedResult.AppendLine("    {");
+			expectedResult.AppendLine("      \"thetaJson\": \"Eight\"");
+			expectedResult.AppendLine("    }");
+			expectedResult.AppendLine("  ]");
+			expectedResult.Append("}");
+
+			// Act
+			var result = _classUnderTest.Convert(configuration.DataProperty, new List<AdditionalPropertyDataRoot> { alpha }).ToList();
+
+			// Assert
+			result.Should().HaveCount(1);
+			result.Single().Should().Be(expectedResult.ToString());
+		}
 	}
 }

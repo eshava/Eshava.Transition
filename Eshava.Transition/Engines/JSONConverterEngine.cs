@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using Eshava.Core.Extensions;
 using Eshava.Transition.Enums;
 using Eshava.Transition.Extensions;
@@ -26,7 +27,7 @@ namespace Eshava.Transition.Engines
 				return new List<T>();
 			}
 
-			var jsonData = Newtonsoft.Json.JsonConvert.DeserializeObject(data);
+			var jsonData = JsonConvert.DeserializeObject(data);
 
 			List<T> dataRecords;
 			if (jsonData is JObject)
@@ -277,7 +278,7 @@ namespace Eshava.Transition.Engines
 
 		private JObject ProcessDataRecord(JSONSettings parentSettings)
 		{
-			var propertyInfos = parentSettings.DataRecord.GetType().GetProperties();
+			var propertyInfos = parentSettings.PropertyInfos ?? parentSettings.DataRecord.GetType().GetProperties();
 			var resultObject = new JObject();
 
 			foreach (var childDataProperty in parentSettings.DataProperty.DataProperties)
@@ -335,7 +336,21 @@ namespace Eshava.Transition.Engines
 			}
 			else
 			{
-				targetObject.Add(new JProperty(settings.DataProperty.PropertySource, propertyContent));
+				var token = targetObject.SelectToken(settings.DataProperty.PropertySource);
+				if (token != default(JToken) && token is JArray)
+				{
+					var tokenArray = token as JArray;
+					var propertyContentArray = propertyContent as JArray;
+
+					foreach (var propertyContentItem in propertyContentArray)
+					{
+						tokenArray.Add(propertyContentItem);
+					}
+				}
+				else
+				{
+					targetObject.Add(new JProperty(settings.DataProperty.PropertySource, propertyContent));
+				}
 			}
 		}
 
@@ -374,8 +389,20 @@ namespace Eshava.Transition.Engines
 		private JObject ProcessClassDataProperty(JSONSettings settings)
 		{
 			var dataRecordClass = settings.PropertyInfo.GetValue(settings.DataRecord);
+			var dataRecordClassProperties = settings.PropertyInfo.PropertyType.GetProperties();
 
-			return ProcessDataRecord(new JSONSettings { DataRecord = dataRecordClass, DataProperty = settings.DataProperty, CultureInfo = settings.CultureInfo });
+			if (!CheckConditionalDataProperty(dataRecordClass, settings.DataProperty, dataRecordClassProperties))
+			{
+				return null;
+			}
+
+			return ProcessDataRecord(new JSONSettings
+			{
+				DataRecord = dataRecordClass,
+				DataProperty = settings.DataProperty,
+				CultureInfo = settings.CultureInfo,
+				PropertyInfos = dataRecordClassProperties
+			});
 		}
 
 		private JArray ProcessEnumerableDataProperty(JSONSettings settings)
@@ -389,12 +416,30 @@ namespace Eshava.Transition.Engines
 			}
 
 			var subItemType = settings.PropertyInfo.PropertyType.GetDataTypeFromIEnumerable();
+			var subItemPropertyInfos = default(PropertyInfo[]);
 
 			foreach (var subItem in dataRecordEnumerable)
 			{
 				if (CheckIfClass(subItemType))
 				{
-					var resultItem = ProcessDataRecord(new JSONSettings { DataRecord = subItem, DataProperty = settings.DataProperty, CultureInfo = settings.CultureInfo });
+					if (subItemPropertyInfos == null)
+					{
+						subItemPropertyInfos = subItemType.GetProperties();
+					}
+
+					if (!CheckConditionalDataProperty(subItem, settings.DataProperty, subItemPropertyInfos))
+					{
+						continue;
+					}
+
+					var resultItem = ProcessDataRecord(new JSONSettings
+					{
+						DataRecord = subItem,
+						DataProperty = settings.DataProperty,
+						CultureInfo = settings.CultureInfo,
+						PropertyInfos = subItemPropertyInfos
+					});
+
 					if (resultItem != null)
 					{
 						result.Add(resultItem);

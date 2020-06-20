@@ -1895,5 +1895,163 @@ namespace Eshava.Test.Transition.Engines
 			var resultItem = result.Single();
 			resultItem.Should().BeEquivalentTo(expectedResult);
 		}
+
+		[TestMethod]
+		public void ExportConditionalMappingExecutionTest()
+		{
+			// Arrange
+			var alpha = new AdditionalPropertyDataRoot
+			{
+				Gamma = new AdditionalPropertyDataOne
+				{
+					Delta = "Two",
+					AttributeDelta = "Second"
+				},
+				Zeta = new List<AdditionalPropertyDataTwo>
+				{
+					new AdditionalPropertyDataTwo
+					{
+						Eta = "Five",
+						Theta = "Six",
+						AttributeEta = "OnlyThis"
+					},
+					new AdditionalPropertyDataTwo
+					{
+						Eta = "Seven",
+						Theta = "Eight",
+						AttributeTheta = "OnlyThis"
+					}
+				}
+			};
+
+			var configuration = new ConfigurationData
+			{
+				DataFormat = ContentFormat.Xml,
+				DataProperty = new DataProperty
+				{
+					PropertySource = "alpha",
+					DataProperties = new List<DataProperty>
+					{
+						new DataProperty
+						{
+							DataProperties = new List<DataProperty>
+							{
+								new DataProperty
+								{
+									PropertySource = "alpha",
+									DataProperties = new List<DataProperty>
+									{
+										new DataProperty
+										{
+											PropertyTarget = "Gamma",
+											PropertySource = "gammaOne",
+											ConditionalPropertyName = "AttributeDelta",
+											ConditionalPropertyValue = "First",
+											DataProperties = new List<DataProperty>
+											{
+												new DataProperty
+												{
+													PropertyTarget = "Delta",
+													PropertySource = "deltaFirst",
+													ConditionalPropertyName = "AttributeDelta",
+													ConditionalPropertyValue = "First"
+												},
+												new DataProperty
+												{
+													PropertyTarget = "Delta",
+													PropertySource = "deltaSecond",
+													ConditionalPropertyName = "AttributeDelta",
+													ConditionalPropertyValue = "Second"
+												}
+											}
+										},
+										new DataProperty
+										{
+											PropertyTarget = "Gamma",
+											PropertySource = "gammaTwo",
+											ConditionalPropertyName = "AttributeDelta",
+											ConditionalPropertyValue = "Second",
+											DataProperties = new List<DataProperty>
+											{
+												new DataProperty
+												{
+													PropertyTarget = "Delta",
+													PropertySource = "deltaFirst",
+													ConditionalPropertyName = "AttributeDelta",
+													ConditionalPropertyValue = "First"
+												},
+												new DataProperty
+												{
+													PropertyTarget = "Delta",
+													PropertySource = "deltaSecond",
+													ConditionalPropertyName = "AttributeDelta",
+													ConditionalPropertyValue = "Second"
+												}
+											}
+										},
+										new DataProperty
+										{
+											PropertyTarget = "Zeta",
+											PropertySource = "zetas",
+											DataProperties = new List<DataProperty>
+											{
+												new DataProperty
+												{
+													PropertyTarget = "Zeta",
+													PropertySource = "zeta",
+													ConditionalPropertyName = "AttributeEta",
+													ConditionalPropertyValue = "OnlyThis",
+													DataProperties = new List<DataProperty>
+													{
+														new DataProperty
+														{
+															PropertyTarget = "Eta",
+															PropertySource = "eta"
+														}
+													}
+												},
+												new DataProperty
+												{
+													PropertyTarget = "Zeta",
+													PropertySource = "zeta",
+													ConditionalPropertyName = "AttributeTheta",
+													ConditionalPropertyValue = "OnlyThis",
+													DataProperties = new List<DataProperty>
+													{
+														new DataProperty
+														{
+															PropertyTarget = "Theta",
+															PropertySource = "theta"
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+
+					}
+				}
+			};
+
+			var expectedResult = new StringBuilder();
+			expectedResult.Append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>");
+			expectedResult.Append("<alpha>");
+			expectedResult.Append("<gammaTwo><deltaSecond>Two</deltaSecond></gammaTwo>");
+			expectedResult.Append("<zetas>");
+			expectedResult.Append("<zeta><eta>Five</eta></zeta>");
+			expectedResult.Append("<zeta><theta>Eight</theta></zeta>");
+			expectedResult.Append("</zetas>");
+			expectedResult.Append("</alpha>");
+
+			// Act
+			var result = _classUnderTest.Convert(configuration.DataProperty, new List<object> { alpha }).ToList();
+
+			// Assert
+			result.Should().HaveCount(1);
+			result.Single().Should().Be(expectedResult.ToString());
+		}
 	}
 }
