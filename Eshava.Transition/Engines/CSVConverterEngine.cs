@@ -28,9 +28,18 @@ namespace Eshava.Transition.Engines
 
 			var dataRows = data.Split('\n');
 			var dataRecords = new List<T>();
+			var columnSettings = new CSVColumnSettings
+			{
+				DataRows = dataRows,
+				HasColumnRow = configuration.HasColumnNamesCSV,
+				HasSurroundingQuotationMarks = configuration.HasSurroundingQuotationMarksCSV,
+				Separator = configuration.SeparatorCSVColumn,
+				StartRowIndex = configuration.StartRowIndexCSV
+			};
+
 			var settings = new CSVSettings
 			{
-				ColumnNames = GetColumnNames(dataRows, configuration.SeparatorCSVColumn, configuration.HasColumnNamesCSV, configuration.StartRowIndexCSV),
+				ColumnNames = GetColumnNames(columnSettings),
 				Properties = configuration.DataProperties,
 				Separator = configuration.SeparatorCSVColumn,
 				CultureInfo = configuration.CultureCode.GetCultureInfo(),
@@ -52,27 +61,45 @@ namespace Eshava.Transition.Engines
 			return removeDublicates ? RemoveDoublets(configuration, dataRecords) : dataRecords;
 		}
 
-		private Dictionary<string, int> GetColumnNames(string[] columnRows, char separator, bool hasColumnRow, int startRowIndex)
+		private Dictionary<string, int> GetColumnNames(CSVColumnSettings columnSettings)
 		{
-			if (columnRows.Length == 0 || columnRows.Length <= startRowIndex)
+			if (columnSettings.DataRows.Length == 0 || columnSettings.DataRows.Length <= columnSettings.StartRowIndex)
 			{
-				throw new ArgumentException($"{nameof(columnRows)} must no be empty");
+				throw new ArgumentException($"{nameof(columnSettings.DataRows)} must no be empty");
 			}
 
 			string[] columns = null;
-			if (hasColumnRow)
+			var settings = new CSVSettings
 			{
-				columns = columnRows[startRowIndex].Replace("\n", "").Trim().Split(separator);
+				Separator = columnSettings.Separator,
+				HasSurroundingQuotationMarks = columnSettings.HasSurroundingQuotationMarks
+			};
+
+			if (columnSettings.HasColumnRow)
+			{
+				if (columnSettings.HasSurroundingQuotationMarks)
+				{
+					var columnRow = columnSettings.DataRows[columnSettings.StartRowIndex];
+					columns = columnRow.Split('\"').Where(part => part != columnSettings.Separator.ToString()).Skip(1).ToArray();
+					if (columns.Last().IsNullOrEmpty() && !columnRow.EndsWith(columnSettings.Separator.ToString()))
+					{
+						columns = columns.Take(columns.Length - 1).ToArray();
+					}
+				}
+				else
+				{
+					columns = columnSettings.DataRows[columnSettings.StartRowIndex].Replace("\n", "").Trim().Split(columnSettings.Separator);
+				}
 			}
 			else
 			{
-				foreach (var columnRow in columnRows.Skip(startRowIndex))
+				foreach (var columnRow in columnSettings.DataRows.Skip(columnSettings.StartRowIndex))
 				{
-					var columnsCurrent = columnRow.Replace("\n", "").Trim().Split(separator);
-
-					if (columns == null || columns.Length < columnsCurrent.Length)
+					settings.DataRow = columnRow;
+					var dataCells = GetDataCells(settings);
+					if (columns == null || columns.Length < dataCells.Length)
 					{
-						columns = columnsCurrent;
+						columns = dataCells;
 					}
 				}
 			}
@@ -81,13 +108,13 @@ namespace Eshava.Transition.Engines
 
 			for (var i = 0; i < columns.Length; i++)
 			{
-				columnsDictionary.Add(hasColumnRow ? columns[i] : i.ToString(), i);
+				columnsDictionary.Add(columnSettings.HasColumnRow ? columns[i] : i.ToString(), i);
 			}
 
 			return columnsDictionary;
 		}
 
-		private T ProcessDataRow<T>(CSVSettings settings) where T : class
+		private string[] GetDataCells(CSVSettings settings)
 		{
 			string[] dataCells;
 			var dataRow = settings.DataRow.Replace("\n", "").Trim();
@@ -103,6 +130,13 @@ namespace Eshava.Transition.Engines
 			{
 				dataCells = dataRow.Split(settings.Separator);
 			}
+
+			return dataCells;
+		}
+
+		private T ProcessDataRow<T>(CSVSettings settings) where T : class
+		{
+			var dataCells = GetDataCells(settings);
 
 			var dataRecordSettings = new CSVSettingsDataRecord
 			{
@@ -420,7 +454,14 @@ namespace Eshava.Transition.Engines
 			{
 				if (columnIndices.ContainsKey(index))
 				{
-					columns[index] = columnIndices[index];
+					if (configuration.HasSurroundingQuotationMarksCSV)
+					{
+						columns[index] = $"\"{ columnIndices[index]}\"";
+					}
+					else
+					{
+						columns[index] = columnIndices[index];
+					}
 				}
 			}
 
@@ -429,7 +470,7 @@ namespace Eshava.Transition.Engines
 
 		private void GetColumnIndices(DataProperty dataProperty, Dictionary<int, string> columnIndices)
 		{
-			if (dataProperty.PropertySourceIndexCSV >= 0 && !columnIndices.ContainsKey(dataProperty.PropertySourceIndexCSV))
+			if (!dataProperty.PropertySource.IsNullOrEmpty() && dataProperty.PropertySourceIndexCSV >= 0 && !columnIndices.ContainsKey(dataProperty.PropertySourceIndexCSV))
 			{
 				columnIndices.Add(dataProperty.PropertySourceIndexCSV, dataProperty.PropertySource);
 			}

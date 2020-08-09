@@ -1264,29 +1264,29 @@ namespace Eshava.Test.Transition.Engines
 				{
 					CultureCode = "de-DE",
 					SeparatorCSVColumn = ',',
-					HasColumnNamesCSV = false,
+					HasColumnNamesCSV = true,
 					HasSurroundingQuotationMarksCSV = true,
 					DataProperties = new List<DataProperty>
 					{
 						new DataProperty {
 							PropertyTarget = "NumberOne",
-							PropertySource = "0"
+							PropertySource = "One"
 						},
 						new DataProperty {
 							PropertyTarget = "NumberTwo",
-							PropertySource = "1"
+							PropertySource = "Two"
 						},
 						new DataProperty {
 							PropertyTarget = "NumberThree",
-							PropertySource = "2"
+							PropertySource = "Three"
 						},
 						new DataProperty {
 							PropertyTarget = "NumberFour",
-							PropertySource = "3"
+							PropertySource = "Four"
 						},
 						new DataProperty {
 							PropertyTarget = "NumberFive",
-							PropertySource = "4"
+							PropertySource = "Five"
 						}
 					}
 				}
@@ -1324,33 +1324,33 @@ namespace Eshava.Test.Transition.Engines
 				{
 					CultureCode = "de-DE",
 					SeparatorCSVColumn = ',',
-					HasColumnNamesCSV = false,
+					HasColumnNamesCSV = true,
 					HasSurroundingQuotationMarksCSV = true,
 					DataProperties = new List<DataProperty>
 					{
 						new DataProperty {
 							PropertyTarget = "NumberOne",
-							PropertySource = "0",
+							PropertySource = "One",
 							PropertySourceIndexCSV = 0
 						},
 						new DataProperty {
 							PropertyTarget = "NumberTwo",
-							PropertySource = "1",
+							PropertySource = "Two",
 							PropertySourceIndexCSV = 1
 						},
 						new DataProperty {
 							PropertyTarget = "NumberThree",
-							PropertySource = "2",
+							PropertySource = "Three",
 							PropertySourceIndexCSV = 2
 						},
 						new DataProperty {
 							PropertyTarget = "NumberFour",
-							PropertySource = "3",
+							PropertySource = "Four",
 							PropertySourceIndexCSV = 3
 						},
 						new DataProperty {
 							PropertyTarget = "NumberFive",
-							PropertySource = "4",
+							PropertySource = "Five",
 							PropertySourceIndexCSV = 4
 						}
 					}
