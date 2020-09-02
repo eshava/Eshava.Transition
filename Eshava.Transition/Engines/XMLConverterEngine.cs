@@ -333,6 +333,10 @@ namespace Eshava.Transition.Engines
 							ProcessDataPropertyAttributes(settings, ProcessPrimitiveDataProperty(settings));
 						}
 					}
+					else if (childDataProperty.HasMapping && !childDataProperty.MappedValue.IsNullOrEmpty())
+					{
+						ProcessDataPropertyAttributes(settings, ProcessPrimitiveDataProperty(settings));
+					}
 					else if (!childDataProperty.PropertySource.IsNullOrEmpty())
 					{
 						BuildAndAddPropertyNodes(settings, xmlNode, ProcessDataRecord);
@@ -396,7 +400,9 @@ namespace Eshava.Transition.Engines
 				return null;
 			}
 
-			var rawValue = GetRawValue(settings.DataRecord, settings.PropertyInfo, settings.CultureInfo);
+			var rawValue = settings.DataProperty.HasMapping
+				? settings.DataProperty.MappedValue
+				: GetRawValue(settings.DataRecord, settings.PropertyInfo, settings.CultureInfo);
 
 			return ProcessPrimitiveDataProperty(settings, rawValue);
 		}
