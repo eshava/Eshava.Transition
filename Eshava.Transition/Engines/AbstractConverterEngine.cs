@@ -245,6 +245,14 @@ namespace Eshava.Transition.Engines
 			{
 				rawValue = Convert.ToDecimal(rawValueBoxed).ToString(cultureInfo);
 			}
+			else if (rawValueBoxed != null && type.IsDouble())
+			{
+				rawValue = Convert.ToDouble(rawValueBoxed).ToString(cultureInfo);
+			}
+			else if (rawValueBoxed != null && type.IsFloat())
+			{
+				rawValue = Convert.ToSingle(rawValueBoxed).ToString(cultureInfo);
+			}
 			else
 			{
 				rawValue = rawValueBoxed?.ToString();

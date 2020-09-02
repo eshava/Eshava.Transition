@@ -8,6 +8,8 @@ namespace Eshava.Transition.Extensions
 		private static readonly Type _typeInteger = typeof(int);
 		private static readonly Type _typeLong = typeof(long);
 		private static readonly Type _typeDecimal = typeof(decimal);
+		private static readonly Type _typeDouble = typeof(double);
+		private static readonly Type _typeFloat = typeof(float);
 
 		public static bool IsInteger(this Type type)
 		{
@@ -22,6 +24,16 @@ namespace Eshava.Transition.Extensions
 		public static bool IsDecimal(this Type type)
 		{
 			return type.GetDataType() == _typeDecimal;
+		}
+
+		public static bool IsDouble(this Type type)
+		{
+			return type.GetDataType() == _typeDouble;
+		}
+
+		public static bool IsFloat(this Type type)
+		{
+			return type.GetDataType() == _typeFloat;
 		}
 	}
 }
