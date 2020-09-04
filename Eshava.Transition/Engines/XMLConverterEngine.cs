@@ -375,18 +375,24 @@ namespace Eshava.Transition.Engines
 				return null;
 			}
 
-			var additionAttributes = GetAdditionalPropertyData(AdditionalPropertyDataType.Attribute, settings.DataProperty);
-			AddAttributesToNode(settings.Document, propertyNode, additionAttributes);
-
 			if (settings.DataProperty.PropertySource.IsNullOrEmpty())
 			{
+				var childNodes = new List<XmlNode>();
 				foreach (XmlNode childPropertyNode in propertyNode.ChildNodes)
+				{
+					childNodes.Add(childPropertyNode);
+				}
+
+				foreach (var childPropertyNode in childNodes)
 				{
 					parentNode.AppendChild(childPropertyNode);
 				}
 			}
 			else
 			{
+				var additionAttributes = GetAdditionalPropertyData(AdditionalPropertyDataType.Attribute, settings.DataProperty);
+				AddAttributesToNode(settings.Document, propertyNode, additionAttributes);
+
 				parentNode.AppendChild(propertyNode);
 			}
 
@@ -461,7 +467,7 @@ namespace Eshava.Transition.Engines
 
 		private XmlNode ProcessEnumerableDataProperty(XMLSettings settings)
 		{
-			var result = settings.Document.CreateNode(XmlNodeType.Element, settings.DataProperty.PropertySource, null);
+			var result = settings.Document.CreateNode(XmlNodeType.Element, settings.DataProperty.PropertySource ?? "Dummy", null);
 			var dataRecordEnumerable = settings.PropertyInfo.GetValue(settings.DataRecord) as System.Collections.IEnumerable;
 
 			if (dataRecordEnumerable == null)
