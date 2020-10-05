@@ -487,36 +487,41 @@ namespace Eshava.Transition.Engines
 						subItemPropertyInfos = subItemType.GetProperties();
 					}
 
-					var subItemDataProperty = settings.DataProperty.DataProperties.FirstOrDefault(d =>
-						   !d.ConditionalPropertyName.IsNullOrEmpty()
-						&& CheckConditionalDataProperty(subItem, d, subItemPropertyInfos));
+					var subItemDataProperties = settings.DataProperty.DataProperties
+						.Where(d => !d.ConditionalPropertyName.IsNullOrEmpty()
+									&& CheckConditionalDataProperty(subItem, d, subItemPropertyInfos)
+									&& !d.IsAttribute)
+						.ToList();
 
-					if (subItemDataProperty == default(DataProperty))
+					if (!subItemDataProperties.Any())
 					{
-						subItemDataProperty = settings.DataProperty.DataProperties.FirstOrDefault(d => d.ConditionalPropertyName.IsNullOrEmpty());
+						subItemDataProperties = settings.DataProperty.DataProperties.Where(d => d.ConditionalPropertyName.IsNullOrEmpty() && !d.IsAttribute).ToList();
 					}
 
-					if (subItemDataProperty == default(DataProperty))
+					if (!subItemDataProperties.Any())
 					{
 						continue;
 					}
 
-					var resultItemSettings = new XMLSettings
+					foreach (var subItemDataProperty in subItemDataProperties)
 					{
-						DataRecord = subItem,
-						DataProperty = subItemDataProperty,
-						Document = settings.Document,
-						CultureInfo = settings.CultureInfo,
-						PropertyInfos = subItemPropertyInfos
-					};
+						var resultItemSettings = new XMLSettings
+						{
+							DataRecord = subItem,
+							DataProperty = subItemDataProperty,
+							Document = settings.Document,
+							CultureInfo = settings.CultureInfo,
+							PropertyInfos = subItemPropertyInfos
+						};
 
-					var resultItem = ProcessDataRecord(resultItemSettings);
-					if (resultItem != null)
-					{
-						result.AppendChild(resultItem);
-						resultItemSettings.DataRecord = settings.DataRecord;
-						resultItemSettings.PropertyInfos = settings.PropertyInfos;
-						ProcessDataPropertyAttributes(resultItemSettings, resultItem);
+						var resultItem = ProcessDataRecord(resultItemSettings);
+						if (resultItem != null)
+						{
+							result.AppendChild(resultItem);
+							resultItemSettings.DataRecord = settings.DataRecord;
+							resultItemSettings.PropertyInfos = settings.PropertyInfos;
+							ProcessDataPropertyAttributes(resultItemSettings, resultItem);
+						}
 					}
 				}
 				else
