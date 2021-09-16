@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -762,6 +763,10 @@ namespace Eshava.Test.Transition.Engines
 										new DataProperty {
 											PropertyTarget = "NumberFive",
 											PropertySource = "numberfive"
+										},
+										new DataProperty {
+											PropertyTarget = "DateTimeOne",
+											PropertySource = "datetimeone"
 										}
 									}
 								}
@@ -782,6 +787,13 @@ namespace Eshava.Test.Transition.Engines
 			cultureTest.Single().NumberThree.Should().Be(30.35f);
 			cultureTest.Single().NumberFour.Should().Be(40);
 			cultureTest.Single().NumberFive.Should().Be(50);
+			cultureTest.Single().DateTimeOne.Value.Year.Should().Be(2021);
+			cultureTest.Single().DateTimeOne.Value.Month.Should().Be(9);
+			cultureTest.Single().DateTimeOne.Value.Day.Should().Be(16);
+			cultureTest.Single().DateTimeOne.Value.Hour.Should().Be(20);
+			cultureTest.Single().DateTimeOne.Value.Minute.Should().Be(0);
+			cultureTest.Single().DateTimeOne.Value.Second.Should().Be(0);
+			cultureTest.Single().DateTimeOne.Value.Kind.Should().Be(DateTimeKind.Unspecified);
 		}
 
 		[TestMethod]
@@ -794,7 +806,8 @@ namespace Eshava.Test.Transition.Engines
 				NumberTwo = 20.25,
 				NumberThree = 30.35f,
 				NumberFour = 40,
-				NumberFive = 50L
+				NumberFive = 50L,
+				DateTimeOne = new System.DateTime(2021, 9, 16, 20, 0, 0, System.DateTimeKind.Unspecified)
 			};
 
 			var configuration = new ConfigurationData
@@ -835,6 +848,10 @@ namespace Eshava.Test.Transition.Engines
 										new DataProperty {
 											PropertyTarget = "NumberFive",
 											PropertySource = "numberfive"
+										},
+										new DataProperty {
+											PropertyTarget = "DateTimeOne",
+											PropertySource = "datetimeone"
 										}
 									}
 								}

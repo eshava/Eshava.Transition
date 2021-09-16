@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -786,7 +787,7 @@ namespace Eshava.Test.Transition.Engines
 			// Arrange
 			var data = File.ReadAllText(_inputFile, Encoding.UTF8);
 			var configuration = GetImportConfiguration();
-			
+
 			// Act
 			var addresses = _classUnderTest.Convert<Address>(configuration.DataProperty, data, false).ToList();
 
@@ -874,7 +875,7 @@ namespace Eshava.Test.Transition.Engines
 			addresses[4].Street.Should().Be("Fun Road 666");
 			addresses[4].Place.Should().Be("Entenhausen");
 			addresses[4].ZIPCode.Should().Be(98765);
-			addresses[4].Country.Should().Be("Deutschland");
+			addresses[4].Country.Should().Be("DEU");
 			addresses[4].Communications.First().Type.Should().Be("mail");
 			addresses[4].Communications.First().Value.Should().Be("contact@spielwaren-gmbh.de");
 		}
@@ -995,7 +996,7 @@ namespace Eshava.Test.Transition.Engines
 			addresses[4].Street.Should().Be("Fun Road 666");
 			addresses[4].Place.Should().Be("Entenhausen");
 			addresses[4].ZIPCode.Should().Be(98765);
-			addresses[4].Country.Should().Be("Deutschland");
+			addresses[4].Country.Should().Be("DEU");
 			addresses[4].Communications.First().Type.Should().Be("mail");
 			addresses[4].Communications.First().Value.Should().Be("contact@spielwaren-gmbh.de");
 		}
@@ -1094,7 +1095,7 @@ namespace Eshava.Test.Transition.Engines
 			addresses[4].Address.Street.Should().Be("Fun Road 666");
 			addresses[4].Address.Place.Should().Be("Entenhausen");
 			addresses[4].Address.ZIPCode.Should().Be(98765);
-			addresses[4].Address.Country.Should().Be("Deutschland");
+			addresses[4].Address.Country.Should().Be("DEU");
 			addresses[4].Communications.First().Type.Should().Be("mail");
 			addresses[4].Communications.First().Value.Should().Be("contact@spielwaren-gmbh.de");
 		}
@@ -1116,8 +1117,25 @@ namespace Eshava.Test.Transition.Engines
 			rows[1].TrimEnd('\r').Should().Be("Kdn0001;Alphabet;ABC Allee 123;12345;Digenskirchen;DE;info@alphabet.de;+4985 123450;Herr;Holger;Wastow;F&E;h.wastow@alphabet.de;+4985 1234567;+49151 89898989");
 			rows[2].TrimEnd('\r').Should().Be("Kdn0001;Alphabet;ABC Allee 123;12345;Digenskirchen;DE;info@alphabet.de;+4985 123450;Frau;Emmen;Taler;Kundenservice;e.taler@alphabet.de;+4985 1234589;");
 			rows[3].TrimEnd('\r').Should().Be("Kdn0003;TWC AG;Deep Link Avenue 1;45110;Pirna;DE;;;Frau;Lasmiranda;Dennsiewillja;Sonstiges;l.d@twc-ag.net;;");
-			rows[4].TrimEnd('\r').Should().Be("Kdn0002;Spielwaren GmbH;Fun Road 666;98765;Entenhausen;DE;contact@spielwaren-gmbh.de;;;;;;;;");
+			rows[4].TrimEnd('\r').Should().Be("Kdn0002;Spielwaren GmbH;Fun Road 666;98765;Entenhausen;DEU;contact@spielwaren-gmbh.de;;;;;;;;");
 		}
+
+		[TestMethod]
+		public void CSVExportConvertNoDataTest()
+		{
+			// Arrange
+			var data = new List<Address>();
+			var configuration = GetExportConfiguration();
+
+			// Act
+			var csvData = _classUnderTest.Convert(configuration.DataProperty, data);
+
+			// Assert
+			var rows = csvData.First().Split('\n');
+			rows.Length.Should().Be(1);
+			rows[0].TrimEnd('\r').Should().Be("KundenNr;Unternehmen;Strasse;PLZ;Ort;Land;EmailZentrale;TelefonZentrale;Anrede;Vorname;Nachname;Position;Email;Telefon;Mobil");
+		}
+
 
 		[TestMethod]
 		public void CSVExportConvertForCompanyTest()
@@ -1136,7 +1154,7 @@ namespace Eshava.Test.Transition.Engines
 			rows[1].TrimEnd('\r').Should().Be("Kdn0001;Alphabet;ABC Allee 123;12345;Digenskirchen;DE;info@alphabet.de;+4985 123450;Herr;Holger;Wastow;F&E;h.wastow@alphabet.de;+4985 1234567;+49151 89898989");
 			rows[2].TrimEnd('\r').Should().Be("Kdn0001;Alphabet;ABC Allee 123;12345;Digenskirchen;DE;info@alphabet.de;+4985 123450;Frau;Emmen;Taler;Kundenservice;e.taler@alphabet.de;+4985 1234589;");
 			rows[3].TrimEnd('\r').Should().Be("Kdn0003;TWC AG;Deep Link Avenue 1;45110;Pirna;DE;;;Frau;Lasmiranda;Dennsiewillja;Sonstiges;l.d@twc-ag.net;;");
-			rows[4].TrimEnd('\r').Should().Be("Kdn0002;Spielwaren GmbH;Fun Road 666;98765;Entenhausen;DE;contact@spielwaren-gmbh.de;;;;;;;;");
+			rows[4].TrimEnd('\r').Should().Be("Kdn0002;Spielwaren GmbH;Fun Road 666;98765;Entenhausen;DEU;contact@spielwaren-gmbh.de;;;;;;;;");
 		}
 
 		[TestMethod]
@@ -1173,6 +1191,10 @@ namespace Eshava.Test.Transition.Engines
 						new DataProperty {
 							PropertyTarget = "NumberFive",
 							PropertySource = "4"
+						},
+						new DataProperty {
+							PropertyTarget = "DateTimeOne",
+							PropertySource = "5"
 						}
 					}
 				}
@@ -1188,6 +1210,13 @@ namespace Eshava.Test.Transition.Engines
 			cultureTest.Single().NumberThree.Should().Be(30.35f);
 			cultureTest.Single().NumberFour.Should().Be(40);
 			cultureTest.Single().NumberFive.Should().Be(50);
+			cultureTest.Single().DateTimeOne.Value.Year.Should().Be(2021);
+			cultureTest.Single().DateTimeOne.Value.Month.Should().Be(9);
+			cultureTest.Single().DateTimeOne.Value.Day.Should().Be(16);
+			cultureTest.Single().DateTimeOne.Value.Hour.Should().Be(20);
+			cultureTest.Single().DateTimeOne.Value.Minute.Should().Be(0);
+			cultureTest.Single().DateTimeOne.Value.Second.Should().Be(0);
+			cultureTest.Single().DateTimeOne.Value.Kind.Should().Be(DateTimeKind.Unspecified);
 		}
 
 		[TestMethod]
@@ -1200,7 +1229,8 @@ namespace Eshava.Test.Transition.Engines
 				NumberTwo = 20.25,
 				NumberThree = 30.35f,
 				NumberFour = 40,
-				NumberFive = 50L
+				NumberFive = 50L,
+				DateTimeOne = new System.DateTime(2021, 9, 16, 20, 0, 0, System.DateTimeKind.Unspecified)
 			};
 
 			var configuration = new ConfigurationData
@@ -1237,6 +1267,11 @@ namespace Eshava.Test.Transition.Engines
 							PropertyTarget = "NumberFive",
 							PropertySource = "4",
 							PropertySourceIndexCSV = 4
+						},
+						new DataProperty {
+							PropertyTarget = "DateTimeOne",
+							PropertySource = "5",
+							PropertySourceIndexCSV = 5
 						}
 					}
 				}
