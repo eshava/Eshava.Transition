@@ -87,6 +87,16 @@ namespace Eshava.Transition.Engines
 
 		protected void SetPropertyValue(PropertyInfo propertyInfo, object dataRecord, object rawValue, CultureInfo cultureInfo)
 		{
+			if (propertyInfo.PropertyType.IsDateTime())
+			{
+				if (DateTime.TryParse(rawValue?.ToString(), cultureInfo, DateTimeStyles.None, out var datetime))
+				{
+					propertyInfo.SetValue(dataRecord, datetime);
+				}
+
+				return;
+			}
+
 			var value = Convert.ChangeType(rawValue, propertyInfo.PropertyType, cultureInfo);
 			propertyInfo.SetValue(dataRecord, value);
 		}
@@ -253,6 +263,17 @@ namespace Eshava.Transition.Engines
 			{
 				rawValue = Convert.ToSingle(rawValueBoxed).ToString(cultureInfo);
 			}
+			else if (rawValueBoxed != null && type.IsDateTime())
+			{
+				if (cultureInfo == CultureInfo.InvariantCulture)
+				{
+					rawValue = Convert.ToDateTime(rawValueBoxed).ToString("yyyy-MM-ddTHH:mm:ssZ");
+				}
+				else
+				{
+					rawValue = Convert.ToDateTime(rawValueBoxed).ToString(cultureInfo);
+				}
+			}
 			else
 			{
 				rawValue = rawValueBoxed?.ToString();
@@ -266,7 +287,7 @@ namespace Eshava.Transition.Engines
 			if (dataProperty.ValueMappings?.Any() ?? false)
 			{
 				var mapping = dataProperty.ValueMappings.FirstOrDefault(m => m.Target.Equals(rawValue, StringComparison.InvariantCultureIgnoreCase));
-				if (!mapping.Source.IsNullOrEmpty())
+				if (mapping != default && !mapping.Source.IsNullOrEmpty())
 				{
 					rawValue = mapping.Source;
 				}

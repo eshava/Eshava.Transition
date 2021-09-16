@@ -91,7 +91,7 @@ namespace Eshava.Transition.Engines
 			{
 				var mapping = settings.DataProperty.ValueMappings.FirstOrDefault(m => m.Source.Equals(rawValue, StringComparison.OrdinalIgnoreCase));
 
-				if (mapping != null && !mapping.Source.IsNullOrEmpty())
+				if (mapping != default && !mapping.Source.IsNullOrEmpty())
 				{
 					rawValue = mapping.Target;
 				}

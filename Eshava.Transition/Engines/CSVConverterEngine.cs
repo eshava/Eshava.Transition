@@ -204,7 +204,7 @@ namespace Eshava.Transition.Engines
 					{
 						var mapping = propertyTarget.ValueMappings.FirstOrDefault(m => m.Source.Equals(rawValue, StringComparison.OrdinalIgnoreCase));
 
-						if (!mapping.Source.IsNullOrEmpty())
+						if (mapping != default && !mapping.Source.IsNullOrEmpty())
 						{
 							rawValue = mapping.Target;
 						}
@@ -284,11 +284,6 @@ namespace Eshava.Transition.Engines
 
 		public IEnumerable<string> Convert<T>(DataProperty configuration, IEnumerable<T> data) where T : class
 		{
-			if (data == null || !data.Any())
-			{
-				return Array.Empty<string>();
-			}
-
 			var columnHeaderRow = GetColumnHeaderRow(configuration);
 			var dataRows = new List<string[]>();
 			var cultureInfo = configuration.CultureCode.GetCultureInfo();
@@ -298,9 +293,12 @@ namespace Eshava.Transition.Engines
 				dataRows.Add(columnHeaderRow);
 			}
 
-			foreach (var dataItem in data)
+			if (data !=default && data.Any())
 			{
-				dataRows.AddRange(ProcessDataRecord(dataItem, configuration, columnHeaderRow.Length, cultureInfo, configuration.HasSurroundingQuotationMarksCSV));
+				foreach (var dataItem in data)
+				{
+					dataRows.AddRange(ProcessDataRecord(dataItem, configuration, columnHeaderRow.Length, cultureInfo, configuration.HasSurroundingQuotationMarksCSV));
+				}
 			}
 
 			return new[] { TransformDataRowArraysToDataRowString(dataRows, configuration.SeparatorCSVColumn) };
