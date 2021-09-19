@@ -202,7 +202,10 @@ namespace Eshava.Transition.Engines
 					var rawValue = settings.DataCells[columnIndex];
 					if (propertyTarget.ValueMappings != null)
 					{
-						var mapping = propertyTarget.ValueMappings.FirstOrDefault(m => m.Source.Equals(rawValue, StringComparison.OrdinalIgnoreCase));
+						var mapping = propertyTarget.ValueMappings.FirstOrDefault(m =>
+							(m.Source.IsNullOrEmpty() && rawValue.IsNullOrEmpty())
+							|| (!m.Source.IsNullOrEmpty() && m.Source.Equals(rawValue, StringComparison.InvariantCultureIgnoreCase))
+						);
 
 						if (mapping != default && !mapping.Source.IsNullOrEmpty())
 						{

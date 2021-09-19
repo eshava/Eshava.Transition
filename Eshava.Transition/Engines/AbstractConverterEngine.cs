@@ -286,7 +286,11 @@ namespace Eshava.Transition.Engines
 		{
 			if (dataProperty.ValueMappings?.Any() ?? false)
 			{
-				var mapping = dataProperty.ValueMappings.FirstOrDefault(m => m.Target.Equals(rawValue, StringComparison.InvariantCultureIgnoreCase));
+				var mapping = dataProperty.ValueMappings.FirstOrDefault(m => 
+					(m.Target.IsNullOrEmpty() && rawValue.IsNullOrEmpty()) 
+					|| (!m.Target.IsNullOrEmpty() && m.Target.Equals(rawValue, StringComparison.InvariantCultureIgnoreCase))
+				);
+				
 				if (mapping != default && !mapping.Source.IsNullOrEmpty())
 				{
 					rawValue = mapping.Source;
