@@ -1,5 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-using Castle.Core.Internal;
+﻿using Eshava.Core.Extensions;
 using Eshava.Transition.Interfaces;
 
 namespace Eshava.Test.Transition.Models
