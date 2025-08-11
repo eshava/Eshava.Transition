@@ -2070,5 +2070,280 @@ namespace Eshava.Test.Transition.Engines
 			result.Should().HaveCount(1);
 			result.Single().Should().Be(expectedResult.ToString());
 		}
+
+		[TestMethod]
+		public void TestNestedStructure()
+		{
+			// Arrange
+			var dataContainer = GetNestedData();
+			var configStringFrame = GetConfigFrame();
+			var configString = GetConfig();
+
+			var config = Newtonsoft.Json.JsonConvert.DeserializeObject<ConfigurationData>(configStringFrame);
+			var configPositions = GetPositionContainer(config.DataProperty);
+
+			configPositions.DataProperties = Newtonsoft.Json.JsonConvert.DeserializeObject<List<DataProperty>>(configString);
+
+			// Act
+			var result = _classUnderTest.Convert(config.DataProperty, new List<NestedContainerDto> { dataContainer }).ToList();
+
+			// Assert
+			result.Should().HaveCount(1);
+
+		}
+
+		private static DataProperty GetPositionContainer(DataProperty dataProperty)
+		{
+			if (dataProperty == null)
+			{
+				return null;
+			}
+
+			if (dataProperty.PropertySource == "Positions")
+			{
+				return dataProperty;
+			}
+
+			if (dataProperty.DataProperties?.Any() ?? false)
+			{
+				foreach (var property in dataProperty.DataProperties)
+				{
+					var container = GetPositionContainer(property);
+					if (container != null)
+					{
+						return container;
+					}
+				}
+			}
+
+			return null;
+		}
+
+		private static string GetConfigFrame()
+		{
+			return """
+
+				{
+					"DataFormat": "Xml",
+					"DataProperty": {
+						"DataProperties": [
+							{
+								"DataProperties": [
+									{
+										"DataProperties": [
+											{
+												"PropertySource": "Positions"
+											}
+										],
+										"PropertySource": "Report"
+									}
+								]
+							}
+						],
+						"PropertySource": "Report"
+					}
+				}
+
+				""";
+		}
+
+		private static string GetConfig()
+		{
+			return """
+
+				[
+					{
+						"DataProperties": [
+							{
+								"PropertyTarget": "NestedGroups",
+								"DataProperties": [
+									{
+										"PropertyTarget": "NestedGroups",
+										"DataProperties": [
+											{
+												"PropertyTarget": "Label",
+												"PropertySource": "ElementText",
+												"AdditionalPropertyData": [
+													{
+														"Type": 1,
+														"Name": "PosX",
+														"Value": "10"
+													},
+													{
+														"Type": 1,
+														"Name": "PosY",
+														"Value": "20"
+													}
+												]
+											},
+											{
+												"PropertyTarget": "SequenceNumber",
+												"PropertySource": "SequenceNo",
+												"IsAttribute": true
+											}
+										],
+										"PropertySource": "Position"
+									}
+								]
+							}
+						],
+						"PropertyTarget": "Data"
+					},
+					{
+						"DataProperties": [
+							{
+								"PropertyTarget": "NestedGroups",
+								"DataProperties": [
+									{
+										"PropertyTarget": "NestedGroups",
+										"DataProperties": [
+											{
+												"PropertyTarget": "Fields",
+												"DataProperties": [
+													{
+														"PropertyTarget": "Fields",
+														"DataProperties": [
+															{
+																"PropertyTarget": "Fields",
+																"DataProperties": [
+																{
+																		"PropertyTarget": "Label",
+																		"PropertySource": "ElementText",
+																		"DataProperties": [],
+																		"AdditionalPropertyData": [
+																			{
+																				"Type": 1,
+																				"Name": "PosX",
+																				"Value": "0"
+																			},
+																			{
+																				"Type": 1,
+																				"Name": "PosY",
+																				"Value": "10"
+																			}
+																		]
+																	},
+																	{
+																		"PropertyTarget": "Value",
+																		"PropertySource": "ElementText",
+																		"ConditionalPropertyName": "Type",
+																		"ConditionalPropertyValue": "Text",
+																		"DataProperties": [],
+																		"AdditionalPropertyData": [
+																			{
+																				"Type": 1,
+																				"Name": "PosX",
+																				"Value": "width-factor:0.25"
+																			},
+																			{
+																				"Type": 1,
+																				"Name": "PosY",
+																				"Value": "10"
+																			}
+																		]
+																	},
+																	{
+																		"PropertyTarget": "Value",
+																		"PropertySource": "ElementHtml",
+																		"ConditionalPropertyName": "Type",
+																		"ConditionalPropertyValue": "Html",
+																		"DataProperties": [],
+																		"AdditionalPropertyData": [
+																			{
+																				"Type": 1,
+																				"Name": "PosX",
+																				"Value": "width-factor:0.25"
+																			},
+																			{
+																				"Type": 1,
+																				"Name": "PosY",
+																				"Value": "10"
+																			}
+																		]
+																	},
+																	{
+																		"PropertyTarget": "SequenceNumber",
+																		"PropertySource": "SequenceNo",
+																		"IsAttribute": true
+																	}
+																],
+																"PropertySource": "Position"
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						],
+						"PropertyTarget": "Data"
+					}
+				]
+
+				""";
+		}
+
+		private static NestedContainerDto GetNestedData()
+		{
+			return new NestedContainerDto
+			{
+				Data = new NestedDataDto
+				{
+					NestedGroups = new List<NestedDataGroupDto>
+					{
+						new NestedDataGroupDto
+						{
+							Label = "First group",
+							SequenceNumber = 1,
+							Fields = new List<NestedDataFieldDto>
+							{
+								new NestedDataFieldDto
+								{
+									Index = 0,
+									Label = "First field",
+									SequenceNumber = 2,
+									Type = "Html",
+									Value = "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua."
+								},
+								new NestedDataFieldDto
+								{
+									Index = 1,
+									Label = "Second field",
+									SequenceNumber = 3,
+									Type = "Text",
+									Value = "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua."
+								}
+							}
+						},
+						new NestedDataGroupDto
+						{
+							Label = "Second group",
+							SequenceNumber = 4,
+							Fields = new List<NestedDataFieldDto>
+							{
+								new NestedDataFieldDto
+								{
+									Index = 0,
+									Label = "Third field",
+									SequenceNumber = 5,
+									Type = "Html",
+									Value = "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua."
+								},
+								new NestedDataFieldDto
+								{
+									Index = 1,
+									Label = "Fourth field",
+									SequenceNumber = 6,
+									Type = "Text",
+									Value = "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua."
+								}
+							}
+						}
+					}
+				}
+			};
+		}
 	}
 }

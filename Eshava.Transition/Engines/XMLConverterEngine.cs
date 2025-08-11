@@ -231,17 +231,20 @@ namespace Eshava.Transition.Engines
 
 			foreach (var dataRecord in data)
 			{
-				var xmlNode = ProcessDataRecord(dataRecord, configuration.DataProperties.First(), document, configuration.CultureCode.GetCultureInfo());
-				if (xmlNode != null)
+				var xmlNodes = ProcessDataRecord(dataRecord, configuration.DataProperties.First(), document, configuration.CultureCode.GetCultureInfo());
+				if (xmlNodes != null && xmlNodes.Length > 0)
 				{
 					if (replaceRootNode)
 					{
-						document.ReplaceChild(xmlNode, document.LastChild);
+						document.ReplaceChild(xmlNodes[0], document.LastChild);
 						xmlNRoot = document.LastChild;
 					}
 					else
 					{
-						xmlNRoot.AppendChild(xmlNode);
+						foreach (var xmlNode in xmlNodes)
+						{
+							xmlNRoot.AppendChild(xmlNode);
+						}
 					}
 
 					if (configuration.SplitExportResult)
@@ -260,19 +263,19 @@ namespace Eshava.Transition.Engines
 			return result;
 		}
 
-		private XmlNode ProcessDataRecord<T>(T dataRecord, DataProperty dataProperty, XmlDocument document, CultureInfo cultureInfo)
+		private XmlNode[] ProcessDataRecord<T>(T dataRecord, DataProperty dataProperty, XmlDocument document, CultureInfo cultureInfo)
 		{
 			return ProcessDataRecord(new XMLSettings { DataRecord = dataRecord, DataProperty = dataProperty, Document = document, CultureInfo = cultureInfo });
 		}
 
-		private XmlNode ProcessDataRecord(XMLSettings parentSettings)
+		private XmlNode[] ProcessDataRecord(XMLSettings parentSettings)
 		{
 			var propertyInfos = parentSettings.PropertyInfos ?? parentSettings.DataRecord.GetType().GetProperties();
-			var extractFirstChild = false;
+			var extractChilds = false;
 			XmlNode xmlNode;
 			if (parentSettings.DataProperty.PropertySource.IsNullOrEmpty() && parentSettings.RawDataNode == null)
 			{
-				extractFirstChild = true;
+				extractChilds = true;
 				xmlNode = parentSettings.Document.CreateNode(XmlNodeType.Element, "Dummy", null);
 			}
 			else if (parentSettings.DataProperty.PropertySource.IsNullOrEmpty())
@@ -288,7 +291,9 @@ namespace Eshava.Transition.Engines
 			AddAttributesToNode(parentSettings.Document, xmlNode, additionAttributes);
 			ProcessDataRecordProperty(parentSettings, propertyInfos, xmlNode);
 
-			return extractFirstChild ? xmlNode.FirstChild : xmlNode;
+			return extractChilds 
+				? xmlNode.ChildNodes.Cast<XmlNode>().ToArray() 
+				: new[] { xmlNode };
 		}
 
 		private void ProcessDataRecordProperty(XMLSettings parentSettings, System.Reflection.PropertyInfo[] propertyInfos, XmlNode xmlNode)
@@ -345,6 +350,19 @@ namespace Eshava.Transition.Engines
 			}
 		}
 
+		private void ProcessDataPropertyAttributes(XMLSettings settings, XmlNode[] xmlNodes)
+		{
+			if (xmlNodes == null)
+			{
+				return;
+			}
+
+			foreach (var xmlNode in xmlNodes)
+			{
+				ProcessDataPropertyAttributes(settings, xmlNode);
+			}
+		}
+
 		private void ProcessDataPropertyAttributes(XMLSettings settings, XmlNode xmlNode)
 		{
 			if (xmlNode == null)
@@ -367,10 +385,10 @@ namespace Eshava.Transition.Engines
 			settings.DataProperty.DataProperties = dataProperties;
 		}
 
-		private XmlNode BuildAndAddPropertyNodes(XMLSettings settings, XmlNode parentNode, Func<XMLSettings, XmlNode> buildPropertyNode)
+		private XmlNode[] BuildAndAddPropertyNodes(XMLSettings settings, XmlNode parentNode, Func<XMLSettings, XmlNode[]> buildPropertyNode)
 		{
-			var propertyNode = buildPropertyNode(settings);
-			if (propertyNode == null)
+			var propertyNodes = buildPropertyNode(settings);
+			if (propertyNodes == null || propertyNodes.Length == 0)
 			{
 				return null;
 			}
@@ -378,9 +396,12 @@ namespace Eshava.Transition.Engines
 			if (settings.DataProperty.PropertySource.IsNullOrEmpty())
 			{
 				var childNodes = new List<XmlNode>();
-				foreach (XmlNode childPropertyNode in propertyNode.ChildNodes)
+				foreach (var propertyNode in propertyNodes)
 				{
-					childNodes.Add(childPropertyNode);
+					foreach (XmlNode childPropertyNode in propertyNode.ChildNodes)
+					{
+						childNodes.Add(childPropertyNode);
+					}
 				}
 
 				foreach (var childPropertyNode in childNodes)
@@ -391,12 +412,15 @@ namespace Eshava.Transition.Engines
 			else
 			{
 				var additionAttributes = GetAdditionalPropertyData(AdditionalPropertyDataType.Attribute, settings.DataProperty);
-				AddAttributesToNode(settings.Document, propertyNode, additionAttributes);
+				foreach (var propertyNode in propertyNodes)
+				{
+					AddAttributesToNode(settings.Document, propertyNode, additionAttributes);
 
-				parentNode.AppendChild(propertyNode);
+					parentNode.AppendChild(propertyNode);
+				}
 			}
 
-			return propertyNode;
+			return propertyNodes;
 		}
 
 		private XmlNode ProcessPrimitiveDataProperty(XMLSettings settings)
@@ -444,7 +468,7 @@ namespace Eshava.Transition.Engines
 			return propertyNode;
 		}
 
-		private XmlNode ProcessClassDataProperty(XMLSettings settings)
+		private XmlNode[] ProcessClassDataProperty(XMLSettings settings)
 		{
 			var dataRecordClass = settings.PropertyInfo.GetValue(settings.DataRecord);
 			var dataRecordClassProperties = settings.PropertyInfo.PropertyType.GetProperties();
@@ -465,7 +489,7 @@ namespace Eshava.Transition.Engines
 			});
 		}
 
-		private XmlNode ProcessEnumerableDataProperty(XMLSettings settings)
+		private XmlNode[] ProcessEnumerableDataProperty(XMLSettings settings)
 		{
 			var result = settings.Document.CreateNode(XmlNodeType.Element, settings.DataProperty.PropertySource ?? "Dummy", null);
 			var dataRecordEnumerable = settings.PropertyInfo.GetValue(settings.DataRecord) as System.Collections.IEnumerable;
@@ -514,13 +538,16 @@ namespace Eshava.Transition.Engines
 							PropertyInfos = subItemPropertyInfos
 						};
 
-						var resultItem = ProcessDataRecord(resultItemSettings);
-						if (resultItem != null)
+						var resultItems = ProcessDataRecord(resultItemSettings);
+						if (resultItems != null && resultItems.Length > 0)
 						{
-							result.AppendChild(resultItem);
-							resultItemSettings.DataRecord = settings.DataRecord;
-							resultItemSettings.PropertyInfos = settings.PropertyInfos;
-							ProcessDataPropertyAttributes(resultItemSettings, resultItem);
+							foreach (var resultItem in resultItems)
+							{
+								result.AppendChild(resultItem);
+								resultItemSettings.DataRecord = settings.DataRecord;
+								resultItemSettings.PropertyInfos = settings.PropertyInfos;
+								ProcessDataPropertyAttributes(resultItemSettings, resultItem);
+							}
 						}
 					}
 				}
@@ -547,7 +574,9 @@ namespace Eshava.Transition.Engines
 				}
 			}
 
-			return result.ChildNodes.Count > 0 ? result : null;
+			return result.ChildNodes.Count > 0
+				? new[] { result }
+				: Array.Empty<XmlNode>();
 		}
 
 		private IEnumerable<AdditionalPropertyData> GetAdditionalPropertyData(AdditionalPropertyDataType type, DataProperty dataProperty)
