@@ -11,6 +11,8 @@ namespace Eshava.Test.Transition.Models
 		public int NumberFour { get; set; }
 		public long NumberFive { get; set; }
 
+		public int? NumberOfNull { get; set; }
+
 		public DateTime? DateTimeOne { get; set; }
 
 		public bool IsEmpty => false;

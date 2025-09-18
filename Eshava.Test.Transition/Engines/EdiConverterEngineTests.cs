@@ -1189,6 +1189,7 @@ namespace Eshava.Test.Transition.Engines
 				NumberThree = 30.35f,
 				NumberFour = 40,
 				NumberFive = 50L,
+				NumberOfNull = null,
 				DateTimeOne = new System.DateTime(2021, 9, 16, 20, 0, 0, System.DateTimeKind.Unspecified)
 			};
 
@@ -1234,6 +1235,12 @@ namespace Eshava.Test.Transition.Engines
 							PropertyTarget = "DateTimeOne",
 							PositionEDI = 50,
 							LengthEDI = 20,
+							LineIndexEDI = 0
+						},
+						new DataProperty {
+							PropertyTarget = "NumberOfNull",
+							PositionEDI = 60,
+							LengthEDI = 10,
 							LineIndexEDI = 0
 						}
 					}

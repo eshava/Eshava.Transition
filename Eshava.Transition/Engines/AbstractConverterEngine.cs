@@ -247,7 +247,7 @@ namespace Eshava.Transition.Engines
 		protected string GetRawValue(Type type, object rawValueBoxed, CultureInfo cultureInfo)
 		{
 			string rawValue;
-			if (rawValueBoxed != null && type.IsInteger() || type.IsInteger())
+			if (rawValueBoxed != null && (type.IsInteger() || type.IsLong() || type.IsShort() || type.IsByte()))
 			{
 				rawValue = Convert.ToInt64(rawValueBoxed).ToString(cultureInfo);
 			}

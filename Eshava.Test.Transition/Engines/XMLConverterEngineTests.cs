@@ -807,6 +807,7 @@ namespace Eshava.Test.Transition.Engines
 				NumberThree = 30.35f,
 				NumberFour = 40,
 				NumberFive = 50L,
+				NumberOfNull = null,
 				DateTimeOne = new System.DateTime(2021, 9, 16, 20, 0, 0, System.DateTimeKind.Unspecified)
 			};
 
@@ -852,6 +853,10 @@ namespace Eshava.Test.Transition.Engines
 										new DataProperty {
 											PropertyTarget = "DateTimeOne",
 											PropertySource = "datetimeone"
+										},
+										new DataProperty {
+											PropertyTarget = "NumberOfNull",
+											PropertySource = "numberOfNull"
 										}
 									}
 								}
