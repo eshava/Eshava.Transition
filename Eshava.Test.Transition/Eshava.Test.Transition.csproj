@@ -2,25 +2,19 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <Company>Eshava</Company>
-    <Product>Eshava.Transition</Product>
-    <Authors>Eshava</Authors>
-    <PackageProjectUrl>https://github.com/eshava/transition</PackageProjectUrl>
-    <Description>A library to transform text files into c# objects and vice versa</Description>
-    <Version>1.0.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
     <Folder Include="Input\" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="FakeItEasy" Version="8.3.0" />
-    <PackageReference Include="FluentAssertions" Version="[7.2.0]" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
-    <PackageReference Include="MSTest.TestAdapter" Version="3.10.1" />
-    <PackageReference Include="MSTest.TestFramework" Version="3.10.1" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="FakeItEasy" Version="8.3.0" />
+		<PackageReference Include="FluentAssertions" Version="[7.2.0]" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
+		<PackageReference Include="MSTest.TestAdapter" Version="4.0.1" />
+		<PackageReference Include="MSTest.TestFramework" Version="4.0.1" />
+	</ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Eshava.Transition\Eshava.Transition.csproj" />
